@@ -349,6 +349,14 @@
       'Mario': 'Jose Manuel'
     };
 
+    // Emparejado de títulos o eventos previos de Google Calendar hacia la familia interna (solo color)
+    const LEGACY_MATCHERS = [
+      { family: 'Espe', keywords: ['espe', 'arturo', 'artuti', 'estefania', 'estefanía', 'manolo', 'familia hv'] },
+      { family: 'Victor', keywords: ['victor', 'víctor', 'intxi', 'andrés', 'andres', 'julia', 'ibai', 'barbacoa'] },
+      { family: 'Felix', keywords: ['felix', 'félix', 'maría', 'maria', 'felixín', 'felixn'] },
+      { family: 'Jose Manuel', keywords: ['jose manuel', 'josé manuel', 'jose eclipse', 'juan', 'mario'] }
+    ];
+
     let state = {
       viewMode: 'month',
       cursorDate: new Date(),
@@ -401,7 +409,14 @@
       return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
     }
 
-    function resolveColorFromEvent(ev) {
+    function normalizeText(text) {
+      return (text || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+    }
+
+    function resolveColorFromEvent(ev, whoLabel) {
       const desc = ev.description || '';
       const famMatch = desc.match(/Familia:\s*(.+)/i);
       if (famMatch) {
@@ -411,10 +426,17 @@
         }
       }
 
-      const title = (ev.title || '').replace(/^Casa Alaejos:\s*/i, '').trim();
-      if (WHATSAPP_TO_FAMILY[title]) {
-        const famKey = WHATSAPP_TO_FAMILY[title];
+      const titleClean = (ev.title || '').replace(/^Casa Alaejos:\s*/i, '').trim();
+      if (WHATSAPP_TO_FAMILY[titleClean]) {
+        const famKey = WHATSAPP_TO_FAMILY[titleClean];
         return FAMILY_COLORS[famKey] || '#64748B';
+      }
+
+      const haystack = normalizeText(`${titleClean} ${whoLabel} ${desc}`);
+      for (const rule of LEGACY_MATCHERS) {
+        if (rule.keywords.some(kw => haystack.includes(normalizeText(kw)))) {
+          return FAMILY_COLORS[rule.family] || '#64748B';
+        }
       }
 
       return '#64748B';
@@ -440,7 +462,7 @@
         return {
           id: ev.id || `${who}-${toYMD(startDate)}-${toYMD(endDateInclusive)}`,
           who,
-          color: resolveColorFromEvent(ev),
+          color: resolveColorFromEvent(ev, who),
           startDate,
           endDate: endDateInclusive,
           startStr: toYMD(startDate),
