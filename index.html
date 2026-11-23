@@ -149,31 +149,6 @@
       border: 1px solid #bbf7d0;
     }
 
-    .family-stats {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-      gap: 0.65rem;
-    }
-
-    .stat-box {
-      border: 1px solid var(--border);
-      border-left-width: 6px;
-      border-radius: 8px;
-      padding: 0.65rem 0.75rem;
-      background: #ffffff;
-    }
-
-    .stat-name {
-      font-weight: 700;
-      font-size: 0.92rem;
-    }
-
-    .stat-detail {
-      font-size: 0.82rem;
-      color: var(--muted);
-      margin-top: 0.2rem;
-    }
-
     .toolbar {
       display: flex;
       flex-wrap: wrap;
@@ -326,11 +301,6 @@
     </section>
 
     <section class="card">
-      <h2>Ocupación acumulada por familia (año seleccionado)</h2>
-      <div id="familyStats" class="family-stats"></div>
-    </section>
-
-    <section class="card">
       <div class="toolbar">
         <div class="nav-group">
           <button id="viewMonthBtn" class="active" type="button">Vista mensual</button>
@@ -357,11 +327,11 @@
   <script>
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby_JVwOWvZzn5IleXlGRVnOvbPHQHEoGNYmzv9aahNxOAjpVX9XyrlfhGC0UvbhJpkM/exec';
 
-    const FAMILIES = {
-      'Victor': { color: '#0284C7', label: 'Familia Victor' },
-      'Espe': { color: '#E05A47', label: 'Familia Espe' },
-      'Felix': { color: '#059669', label: 'Familia Felix' },
-      'Jose Manuel': { color: '#D97706', label: 'Familia Jose Manuel' }
+    const FAMILY_COLORS = {
+      'Victor': '#0284C7',
+      'Espe': '#E05A47',
+      'Felix': '#059669',
+      'Jose Manuel': '#D97706'
     };
 
     const WHATSAPP_TO_FAMILY = {
@@ -393,7 +363,6 @@
     const formAlert = document.getElementById('formAlert');
     const calendarView = document.getElementById('calendarView');
     const periodLabel = document.getElementById('periodLabel');
-    const familyStats = document.getElementById('familyStats');
     const bookingsList = document.getElementById('bookingsList');
 
     function initSelect() {
@@ -432,23 +401,23 @@
       return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
     }
 
-    function resolveFamilyFromEvent(ev) {
+    function resolveColorFromEvent(ev) {
       const desc = ev.description || '';
       const famMatch = desc.match(/Familia:\s*(.+)/i);
       if (famMatch) {
         const famKey = famMatch[1].trim();
-        if (FAMILIES[famKey]) {
-          return { key: famKey, color: FAMILIES[famKey].color };
+        if (FAMILY_COLORS[famKey]) {
+          return FAMILY_COLORS[famKey];
         }
       }
 
       const title = (ev.title || '').replace(/^Casa Alaejos:\s*/i, '').trim();
       if (WHATSAPP_TO_FAMILY[title]) {
         const famKey = WHATSAPP_TO_FAMILY[title];
-        return { key: famKey, color: FAMILIES[famKey].color };
+        return FAMILY_COLORS[famKey] || '#64748B';
       }
 
-      return { key: 'Sin asignar', color: '#64748B' };
+      return '#64748B';
     }
 
     function normalizeEvents(rawEvents) {
@@ -456,7 +425,6 @@
         const startDate = parseYMD(ev.start);
         let endDateInclusive = parseYMD(ev.end);
 
-        // En eventos all-day de Google Calendar el fin suele venir como día exclusivo (+1)
         if (ev.isAllDay && endDateInclusive > startDate) {
           endDateInclusive = addDaysDate(endDateInclusive, -1);
         }
@@ -469,13 +437,10 @@
           ? whoMatch[1].trim()
           : (ev.title || 'Reserva').replace(/^Casa Alaejos:\s*/i, '').trim();
 
-        const fam = resolveFamilyFromEvent(ev);
-
         return {
           id: ev.id || `${who}-${toYMD(startDate)}-${toYMD(endDateInclusive)}`,
           who,
-          family: fam.key,
-          color: fam.color,
+          color: resolveColorFromEvent(ev),
           startDate,
           endDate: endDateInclusive,
           startStr: toYMD(startDate),
@@ -512,46 +477,6 @@
       return state.bookings.filter(b => d >= b.startDate && d <= b.endDate);
     }
 
-    function countDaysInYearForFamily(year, famKey) {
-      const yearStart = new Date(year, 0, 1);
-      const yearEnd = new Date(year, 11, 31);
-      const uniqueDays = new Set();
-      let staysCount = 0;
-
-      state.bookings.forEach(b => {
-        if (b.family !== famKey) return;
-        const ovStart = b.startDate > yearStart ? b.startDate : yearStart;
-        const ovEnd = b.endDate < yearEnd ? b.endDate : yearEnd;
-        if (ovStart <= ovEnd) {
-          staysCount += 1;
-          let cur = new Date(ovStart.getTime());
-          while (cur <= ovEnd) {
-            uniqueDays.add(toYMD(cur));
-            cur = addDaysDate(cur, 1);
-          }
-        }
-      });
-
-      return { days: uniqueDays.size, stays: staysCount };
-    }
-
-    function renderStats() {
-      const year = state.cursorDate.getFullYear();
-      familyStats.innerHTML = '';
-
-      Object.entries(FAMILIES).forEach(([key, info]) => {
-        const metrics = countDaysInYearForFamily(year, key);
-        const box = document.createElement('div');
-        box.className = 'stat-box';
-        box.style.borderLeftColor = info.color;
-        box.innerHTML = `
-          <div class="stat-name">${info.label} (${year})</div>
-          <div class="stat-detail">${metrics.days} días · ${metrics.stays} estancias</div>
-        `;
-        familyStats.appendChild(box);
-      });
-    }
-
     function renderMonthView() {
       const year = state.cursorDate.getFullYear();
       const month = state.cursorDate.getMonth();
@@ -563,7 +488,6 @@
 
       const firstDay = new Date(year, month, 1);
       const lastDay = new Date(year, month + 1, 0);
-      // Lunes = 0 ... Domingo = 6
       const startOffset = (firstDay.getDay() + 6) % 7;
 
       const dows = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
@@ -639,13 +563,11 @@
           <div>
             <strong>${b.who}</strong> · ${b.startStr} → ${b.endStr}
           </div>
-          <span style="font-size:0.8rem;font-weight:700;color:${b.color}">${b.family}</span>
         </div>
       `).join('');
     }
 
     function renderAll() {
-      renderStats();
       if (state.viewMode === 'month') {
         renderMonthView();
       } else {
@@ -683,7 +605,7 @@
       }
 
       const familyKey = WHATSAPP_TO_FAMILY[who] || 'Victor';
-      const colorHex = (FAMILIES[familyKey] && FAMILIES[familyKey].color) || '#0284C7';
+      const colorHex = FAMILY_COLORS[familyKey] || '#0284C7';
 
       submitBtn.disabled = true;
       try {
