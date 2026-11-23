@@ -787,7 +787,6 @@
     </section>
   </main>
 
-  <!-- Modal de edición de evento -->
   <div id="editModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
     <div class="modal-box">
       <div class="modal-header">
@@ -829,7 +828,6 @@
     </div>
   </div>
 
-  <!-- Modal de instalación -->
   <div id="installModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="installModalTitle">
     <div class="modal-box">
       <div class="modal-header">
@@ -911,7 +909,7 @@
       viewMode: 'month',
       cursorDate: new Date(),
       bookings: [],
-      editingBookingId: null,
+      editingBookingIdx: null,
       loading: false,
       deferredInstallPrompt: null
     };
@@ -1027,7 +1025,7 @@
 
     function resolveFamilyFromEvent(ev, whoLabel) {
       const desc = ev.description || '';
-      const famMatch = desc.match(/Familia:\s*(.+)/i);
+      const famMatch = desc.match(/^Familia:\s*(.+)/im);
       if (famMatch) {
         const famKey = famMatch[1].trim();
         if (FAMILY_COLORS[famKey]) {
@@ -1052,43 +1050,47 @@
     }
 
     function normalizeEvents(rawEvents) {
-      return (rawEvents || []).map(ev => {
-        const startDate = parseYMD(ev.start);
-        let endDateInclusive = parseYMD(ev.end);
+      return (rawEvents || [])
+        .map((ev, idx) => {
+          const startDate = parseYMD(ev.start);
+          let endDateInclusive = parseYMD(ev.end);
 
-        if (ev.isAllDay && endDateInclusive > startDate) {
-          endDateInclusive = addDaysDate(endDateInclusive, -1);
-        }
-        if (endDateInclusive < startDate) {
-          endDateInclusive = new Date(startDate.getTime());
-        }
+          if (ev.isAllDay && endDateInclusive > startDate) {
+            endDateInclusive = addDaysDate(endDateInclusive, -1);
+          }
+          if (endDateInclusive < startDate) {
+            endDateInclusive = new Date(startDate.getTime());
+          }
 
-        const rawTitle = ev.title || '';
-        const desc = ev.description || '';
-        const cancelled = Boolean(ev.cancelled) || /^\[CANCELADO\]/i.test(rawTitle) || /Estado:\s*CANCELADO/i.test(desc);
+          const rawTitle = ev.title || '';
+          const desc = ev.description || '';
+          const cancelled = Boolean(ev.cancelled) || /^\[CANCELADO\]/im.test(rawTitle.trim()) || /^Estado:\s*CANCELADO/im.test(desc);
 
-        const cleanTitle = rawTitle.replace(/^\[CANCELADO\]\s*/i, '').replace(/^Casa Alaejos:\s*/i, '').trim();
-        const whoMatch = desc.match(/Reservado por:\s*(.+)/i);
-        const who = whoMatch ? whoMatch[1].trim() : (cleanTitle || 'Reserva');
+          const cleanTitle = rawTitle.replace(/^\[CANCELADO\]\s*/i, '').replace(/^Casa Alaejos:\s*/i, '').trim();
+          const whoMatch = desc.match(/^Reservado por:\s*(.+)/im);
+          const who = whoMatch ? whoMatch[1].trim() : (cleanTitle || 'Reserva');
 
-        const commentMatch = desc.match(/Comentario:\s*(.+)/i);
-        const comment = commentMatch ? commentMatch[1].trim() : '';
+          const commentMatch = desc.match(/^Comentario:\s*(.+)/im);
+          const comment = commentMatch ? commentMatch[1].trim() : '';
 
-        const fam = resolveFamilyFromEvent(ev, who);
+          const fam = resolveFamilyFromEvent(ev, who);
 
-        return {
-          id: ev.id || '',
-          who,
-          comment,
-          cancelled,
-          family: fam.key,
-          color: fam.color,
-          startDate,
-          endDate: endDateInclusive,
-          startStr: toYMD(startDate),
-          endStr: toYMD(endDateInclusive)
-        };
-      }).sort((a, b) => a.startDate - b.startDate);
+          return {
+            _rawIndex: idx,
+            id: ev.id || '',
+            who,
+            comment,
+            cancelled,
+            family: fam.key,
+            color: fam.color,
+            startDate,
+            endDate: endDateInclusive,
+            startStr: toYMD(startDate),
+            endStr: toYMD(endDateInclusive)
+          };
+        })
+        .sort((a, b) => a.startDate - b.startDate)
+        .map((item, sortedIdx) => ({ ...item, _idx: sortedIdx }));
     }
 
     async function loadBookings() {
@@ -1110,12 +1112,12 @@
       }
     }
 
-    function activeBookings(excludeId = null) {
-      return state.bookings.filter(b => !b.cancelled && b.id !== excludeId);
+    function activeBookings(excludeIdx = null) {
+      return state.bookings.filter(b => !b.cancelled && b._idx !== excludeIdx);
     }
 
-    function hasOverlap(startA, endA, excludeId = null) {
-      return activeBookings(excludeId).filter(b => startA <= b.endDate && endA >= b.startDate);
+    function hasOverlap(startA, endA, excludeIdx = null) {
+      return activeBookings(excludeIdx).filter(b => startA <= b.endDate && endA >= b.startDate);
     }
 
     function staysOnDate(dateObj) {
@@ -1164,13 +1166,15 @@
       });
     }
 
-    function openEditModal(booking) {
-      if (!booking || !booking.id) {
+    function openEditModalByIdx(idx) {
+      const booking = state.bookings[idx];
+      if (!booking) return;
+      if (!booking.id) {
         showAlert('error', 'Este evento no tiene identificador disponible para editar desde la web.');
         return;
       }
       clearAlert();
-      state.editingBookingId = booking.id;
+      state.editingBookingIdx = idx;
 
       if (WHATSAPP_TO_FAMILY[booking.who]) {
         editWhoSelect.value = booking.who;
@@ -1186,7 +1190,7 @@
     }
 
     function closeEditModal() {
-      state.editingBookingId = null;
+      state.editingBookingIdx = null;
       editModal.classList.remove('open');
     }
 
@@ -1225,7 +1229,7 @@
             btnEdit.textContent = 'Editar';
             btnEdit.addEventListener('click', (ev) => {
               ev.stopPropagation();
-              openEditModal(st);
+              openEditModalByIdx(st._idx);
             });
             item.appendChild(btnEdit);
           }
@@ -1255,13 +1259,12 @@
         });
       });
 
-      calendarView.querySelectorAll('[data-event-id]').forEach(el => {
+      calendarView.querySelectorAll('[data-booking-idx]').forEach(el => {
         el.addEventListener('click', (ev) => {
           ev.stopPropagation();
-          const evId = el.getAttribute('data-event-id');
-          const found = state.bookings.find(b => b.id === evId);
-          if (found) {
-            openEditModal(found);
+          const idx = Number(el.getAttribute('data-booking-idx'));
+          if (!Number.isNaN(idx)) {
+            openEditModalByIdx(idx);
           }
         });
       });
@@ -1306,8 +1309,8 @@
         html += `<div class="day-cell${todayClass}" data-date="${ymd}"><span class="day-num">${day}${todayBadge}</span>`;
         activeStays.forEach(st => {
           const tip = st.comment ? `${st.who} (${st.startStr} a ${st.endStr}) - ${st.comment}` : `${st.who} (${st.startStr} a ${st.endStr})`;
-          const dataAttr = st.id ? ` data-event-id="${st.id.replace(/"/g, '&quot;')}"` : '';
-          html += `<span class="stay-pill" style="background:${st.color}"${dataAttr} title="${tip}">${st.who}</span>`;
+          const idxAttr = st.id ? ` data-booking-idx="${st._idx}"` : '';
+          html += `<span class="stay-pill" style="background:${st.color}"${idxAttr} title="${tip}">${st.who}</span>`;
         });
         html += '</div>';
       }
@@ -1346,8 +1349,8 @@
           if (dayStays.length > 0) {
             const topStay = dayStays[dayStays.length - 1];
             const title = dayStays.map(s => `${s.who} (${s.startStr} a ${s.endStr})`).join(' | ');
-            const evAttr = topStay.id ? ` data-event-id="${topStay.id.replace(/"/g, '&quot;')}"` : '';
-            html += `<div class="mini-day${todayClass}" data-date="${ymd}"${evAttr} style="background:${topStay.color};color:#fff;font-weight:700" title="${title}">${d}</div>`;
+            const idxAttr = topStay.id ? ` data-booking-idx="${topStay._idx}"` : '';
+            html += `<div class="mini-day${todayClass}" data-date="${ymd}"${idxAttr} style="background:${topStay.color};color:#fff;font-weight:700" title="${title}">${d}</div>`;
           } else {
             html += `<div class="mini-day${todayClass}" data-date="${ymd}" title="${ymd} (libre)">${d}</div>`;
           }
@@ -1360,8 +1363,9 @@
       attachCalendarHandlers();
     }
 
-    async function cancelBooking(booking) {
-      if (!booking.id) {
+    async function cancelBookingByIdx(idx) {
+      const booking = state.bookings[idx];
+      if (!booking || !booking.id) {
         showAlert('error', 'Este evento no tiene identificador disponible para cancelar desde la web.');
         return;
       }
@@ -1405,7 +1409,7 @@
         row.style.borderLeftColor = b.color;
 
         if (b.id) {
-          row.addEventListener('click', () => openEditModal(b));
+          row.addEventListener('click', () => openEditModalByIdx(b._idx));
         }
 
         const info = document.createElement('div');
@@ -1428,7 +1432,7 @@
           btnEdit.textContent = 'Editar';
           btnEdit.addEventListener('click', (ev) => {
             ev.stopPropagation();
-            openEditModal(b);
+            openEditModalByIdx(b._idx);
           });
           actions.appendChild(btnEdit);
 
@@ -1439,7 +1443,7 @@
             btnCancel.textContent = 'Cancelar';
             btnCancel.addEventListener('click', (ev) => {
               ev.stopPropagation();
-              cancelBooking(b);
+              cancelBookingByIdx(b._idx);
             });
             actions.appendChild(btnCancel);
           }
@@ -1470,7 +1474,9 @@
 
     document.getElementById('editBookingForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      if (!state.editingBookingId) return;
+      if (state.editingBookingIdx === null) return;
+      const targetBooking = state.bookings[state.editingBookingIdx];
+      if (!targetBooking || !targetBooking.id) return;
 
       const who = editWhoSelect.value;
       const checkInStr = editCheckIn.value;
@@ -1492,7 +1498,7 @@
       }
 
       if (!cancelled) {
-        const conflicts = hasOverlap(startDate, endDate, state.editingBookingId);
+        const conflicts = hasOverlap(startDate, endDate, targetBooking._idx);
         if (conflicts.length > 0) {
           const names = conflicts.map(c => `${c.who} (${c.startStr} a ${c.endStr})`).join(', ');
           alert(`Aviso de solapamiento: ya hay reserva en esas fechas (${names}).`);
@@ -1502,7 +1508,7 @@
 
       const familyKey = WHATSAPP_TO_FAMILY[who] || 'Victor';
       const colorHex = FAMILY_COLORS[familyKey] || '#0284C7';
-      const targetId = state.editingBookingId;
+      const targetId = targetBooking.id;
 
       saveEditBtn.disabled = true;
       try {
