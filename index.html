@@ -160,14 +160,19 @@
 
     .nav-group {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
       gap: 0.5rem;
     }
 
-    .period-label {
-      font-weight: 700;
-      min-width: 140px;
-      text-align: center;
+    .period-select {
+      padding: 0.45rem 0.6rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #ffffff;
+      color: var(--text);
+      font-weight: 600;
+      font-size: 0.9rem;
     }
 
     .month-grid {
@@ -308,9 +313,23 @@
         </div>
 
         <div class="nav-group">
-          <button id="prevBtn" type="button">&lt;</button>
-          <span id="periodLabel" class="period-label"></span>
-          <button id="nextBtn" type="button">&gt;</button>
+          <button id="prevBtn" type="button" aria-label="Anterior">&lt;</button>
+          <select id="monthSelect" class="period-select" aria-label="Seleccionar mes">
+            <option value="0">enero</option>
+            <option value="1">febrero</option>
+            <option value="2">marzo</option>
+            <option value="3">abril</option>
+            <option value="4">mayo</option>
+            <option value="5">junio</option>
+            <option value="6">julio</option>
+            <option value="7">agosto</option>
+            <option value="8">septiembre</option>
+            <option value="9">octubre</option>
+            <option value="10">noviembre</option>
+            <option value="11">diciembre</option>
+          </select>
+          <select id="yearSelect" class="period-select" aria-label="Seleccionar año"></select>
+          <button id="nextBtn" type="button" aria-label="Siguiente">&gt;</button>
           <button id="todayBtn" type="button">Hoy</button>
         </div>
       </div>
@@ -349,7 +368,6 @@
       'Mario': 'Jose Manuel'
     };
 
-    // Emparejado de títulos o eventos previos de Google Calendar hacia la familia interna (solo color)
     const LEGACY_MATCHERS = [
       { family: 'Espe', keywords: ['espe', 'arturo', 'artuti', 'estefania', 'estefanía', 'manolo', 'familia hv'] },
       { family: 'Victor', keywords: ['victor', 'víctor', 'intxi', 'andrés', 'andres', 'julia', 'ibai', 'barbacoa'] },
@@ -370,7 +388,8 @@
     const submitBtn = document.getElementById('submitBtn');
     const formAlert = document.getElementById('formAlert');
     const calendarView = document.getElementById('calendarView');
-    const periodLabel = document.getElementById('periodLabel');
+    const monthSelect = document.getElementById('monthSelect');
+    const yearSelect = document.getElementById('yearSelect');
     const bookingsList = document.getElementById('bookingsList');
 
     function initSelect() {
@@ -380,6 +399,33 @@
         opt.textContent = name;
         whoSelect.appendChild(opt);
       });
+
+      const currentYear = new Date().getFullYear();
+      for (let y = currentYear - 2; y <= currentYear + 5; y++) {
+        const opt = document.createElement('option');
+        opt.value = String(y);
+        opt.textContent = String(y);
+        yearSelect.appendChild(opt);
+      }
+    }
+
+    function syncPeriodSelectors() {
+      const year = state.cursorDate.getFullYear();
+      const month = state.cursorDate.getMonth();
+
+      if (!Array.from(yearSelect.options).some(o => Number(o.value) === year)) {
+        const opt = document.createElement('option');
+        opt.value = String(year);
+        opt.textContent = String(year);
+        yearSelect.appendChild(opt);
+        const sorted = Array.from(yearSelect.options).sort((a, b) => Number(a.value) - Number(b.value));
+        yearSelect.innerHTML = '';
+        sorted.forEach(o => yearSelect.appendChild(o));
+      }
+
+      monthSelect.value = String(month);
+      yearSelect.value = String(year);
+      monthSelect.style.display = state.viewMode === 'month' ? '' : 'none';
     }
 
     function showAlert(type, message) {
@@ -503,11 +549,6 @@
       const year = state.cursorDate.getFullYear();
       const month = state.cursorDate.getMonth();
 
-      periodLabel.textContent = state.cursorDate.toLocaleDateString('es-ES', {
-        month: 'long',
-        year: 'numeric'
-      });
-
       const firstDay = new Date(year, month, 1);
       const lastDay = new Date(year, month + 1, 0);
       const startOffset = (firstDay.getDay() + 6) % 7;
@@ -538,7 +579,6 @@
 
     function renderYearView() {
       const year = state.cursorDate.getFullYear();
-      periodLabel.textContent = String(year);
 
       let html = '<div class="year-grid">';
       for (let m = 0; m < 12; m++) {
@@ -590,6 +630,7 @@
     }
 
     function renderAll() {
+      syncPeriodSelectors();
       if (state.viewMode === 'month') {
         renderMonthView();
       } else {
@@ -656,6 +697,20 @@
       } finally {
         submitBtn.disabled = false;
       }
+    });
+
+    monthSelect.addEventListener('change', () => {
+      const targetYear = Number(yearSelect.value);
+      const targetMonth = Number(monthSelect.value);
+      state.cursorDate = new Date(targetYear, targetMonth, 1);
+      renderAll();
+    });
+
+    yearSelect.addEventListener('change', () => {
+      const targetYear = Number(yearSelect.value);
+      const targetMonth = state.viewMode === 'month' ? Number(monthSelect.value) : 0;
+      state.cursorDate = new Date(targetYear, targetMonth, 1);
+      renderAll();
     });
 
     document.getElementById('viewMonthBtn').addEventListener('click', () => {
