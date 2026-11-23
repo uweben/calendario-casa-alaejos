@@ -18,6 +18,8 @@
       --danger-bg: #fef2f2;
       --ok: #15803d;
       --ok-bg: #f0fdf4;
+      --info-bg: #f0f9ff;
+      --info-border: #bae6fd;
     }
 
     * {
@@ -51,6 +53,7 @@
 
     .header-actions {
       display: flex;
+      flex-wrap: wrap;
       gap: 0.5rem;
       align-items: center;
     }
@@ -198,10 +201,21 @@
       display: flex;
       flex-direction: column;
       gap: 2px;
+      cursor: pointer;
+      transition: border-color 0.12s ease;
+    }
+
+    .day-cell:hover {
+      border-color: #0284c7;
     }
 
     .day-cell.empty {
       background: #f1f5f9;
+      cursor: default;
+    }
+
+    .day-cell.empty:hover {
+      border-color: var(--border);
     }
 
     .day-num {
@@ -250,6 +264,27 @@
     .mini-day {
       padding: 4px 0;
       border-radius: 4px;
+      cursor: pointer;
+      border: 1px solid transparent;
+    }
+
+    .mini-day:hover {
+      border-color: #0f172a;
+      font-weight: 700;
+    }
+
+    .day-detail-box {
+      margin-top: 0.85rem;
+      padding: 0.75rem 0.9rem;
+      border-radius: 8px;
+      background: var(--info-bg);
+      border: 1px solid var(--info-border);
+      font-size: 0.88rem;
+      display: none;
+    }
+
+    .day-detail-box.visible {
+      display: block;
     }
 
     .bookings-list {
@@ -269,18 +304,79 @@
       border-radius: 8px;
       font-size: 0.88rem;
     }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      z-index: 1000;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-box {
+      background: #ffffff;
+      color: var(--text);
+      border-radius: 12px;
+      max-width: 520px;
+      width: 100%;
+      padding: 1.25rem;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .modal-header h2 {
+      margin: 0;
+      font-size: 1.05rem;
+    }
+
+    .guide-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 0.85rem;
+    }
+
+    .guide-panel {
+      display: none;
+      font-size: 0.9rem;
+    }
+
+    .guide-panel.active {
+      display: block;
+    }
+
+    .guide-panel ol {
+      margin: 0.5rem 0 0 0;
+      padding-left: 1.2rem;
+      display: grid;
+      gap: 0.45rem;
+    }
   </style>
 </head>
 <body>
   <header>
     <h1>Casa Alaejos · Ocupaciones</h1>
     <div class="header-actions">
+      <button id="btnInstallGuide" class="primary" type="button">Añadir a escritorio</button>
       <button id="btnReload" type="button">Actualizar calendario</button>
     </div>
   </header>
 
   <main class="container">
-    <section class="card">
+    <section class="card" id="bookingCard">
       <h2>Reservar fechas</h2>
       <form id="bookingForm" class="form-grid">
         <label>
@@ -335,6 +431,7 @@
       </div>
 
       <div id="calendarView"></div>
+      <div id="dayDetailBox" class="day-detail-box" aria-live="polite"></div>
     </section>
 
     <section class="card">
@@ -342,6 +439,44 @@
       <div id="bookingsList" class="bookings-list"></div>
     </section>
   </main>
+
+  <div id="installModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="installModalTitle">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 id="installModalTitle">Añadir aplicación a escritorio / inicio</h2>
+        <button id="btnCloseModal" type="button" aria-label="Cerrar">✕</button>
+      </div>
+
+      <div id="nativePromptArea" style="display:none;margin-bottom:0.85rem;">
+        <button id="btnNativeInstall" class="primary" type="button" style="width:100%;">Instalar ahora en este dispositivo</button>
+      </div>
+
+      <div class="guide-tabs">
+        <button id="tabAndroid" class="active" type="button">Android</button>
+        <button id="tabIphone" type="button">iPhone</button>
+      </div>
+
+      <div id="panelAndroid" class="guide-panel active">
+        <strong>En Android (Chrome):</strong>
+        <ol>
+          <li>Abre esta página en <strong>Google Chrome</strong>.</li>
+          <li>Pulsa el icono de los <strong>tres puntos (⋮)</strong> arriba a la derecha.</li>
+          <li>Selecciona <strong>Añadir a pantalla de inicio</strong> o <strong>Instalar aplicación</strong>.</li>
+          <li>Confirma pulsando <strong>Añadir</strong> o <strong>Instalar</strong> y aparecerá el icono en tu móvil.</li>
+        </ol>
+      </div>
+
+      <div id="panelIphone" class="guide-panel">
+        <strong>En iPhone (Safari):</strong>
+        <ol>
+          <li>Abre esta página en <strong>Safari</strong> (si la abriste desde WhatsApp, pulsa los tres puntos o el icono de Safari para abrirla en el navegador).</li>
+          <li>Pulsa el botón <strong>Compartir</strong> (cuadrado con flecha hacia arriba) en la barra inferior o superior.</li>
+          <li>Desplázate hacia abajo en el menú y pulsa <strong>Añadir a pantalla de inicio</strong>.</li>
+          <li>Pulsa <strong>Añadir</strong> arriba a la derecha para crear el acceso directo en tu pantalla.</li>
+        </ol>
+      </div>
+    </div>
+  </div>
 
   <script>
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby_JVwOWvZzn5IleXlGRVnOvbPHQHEoGNYmzv9aahNxOAjpVX9XyrlfhGC0UvbhJpkM/exec';
@@ -379,7 +514,8 @@
       viewMode: 'month',
       cursorDate: new Date(),
       bookings: [],
-      loading: false
+      loading: false,
+      deferredInstallPrompt: null
     };
 
     const whoSelect = document.getElementById('whoSelect');
@@ -388,9 +524,16 @@
     const submitBtn = document.getElementById('submitBtn');
     const formAlert = document.getElementById('formAlert');
     const calendarView = document.getElementById('calendarView');
+    const dayDetailBox = document.getElementById('dayDetailBox');
     const monthSelect = document.getElementById('monthSelect');
     const yearSelect = document.getElementById('yearSelect');
     const bookingsList = document.getElementById('bookingsList');
+    const installModal = document.getElementById('installModal');
+    const nativePromptArea = document.getElementById('nativePromptArea');
+    const tabAndroid = document.getElementById('tabAndroid');
+    const tabIphone = document.getElementById('tabIphone');
+    const panelAndroid = document.getElementById('panelAndroid');
+    const panelIphone = document.getElementById('panelIphone');
 
     function initSelect() {
       Object.keys(WHATSAPP_TO_FAMILY).forEach(name => {
@@ -545,6 +688,43 @@
       return state.bookings.filter(b => d >= b.startDate && d <= b.endDate);
     }
 
+    function handleDayClick(dateObj) {
+      clearAlert();
+      const clickedStr = toYMD(dateObj);
+      const dayStays = staysOnDate(dateObj);
+
+      if (!checkInInput.value || (checkInInput.value && checkOutInput.value)) {
+        checkInInput.value = clickedStr;
+        checkOutInput.value = clickedStr;
+      } else if (clickedStr >= checkInInput.value) {
+        checkOutInput.value = clickedStr;
+      } else {
+        checkInInput.value = clickedStr;
+      }
+
+      if (dayStays.length > 0) {
+        const itemsHtml = dayStays
+          .map(st => `<div><strong style="color:${st.color}">● ${st.who}</strong> (${st.startStr} → ${st.endStr})</div>`)
+          .join('');
+        dayDetailBox.innerHTML = `<div><strong>Día ${clickedStr}:</strong> ocupaciones previstas:</div>${itemsHtml}`;
+      } else {
+        dayDetailBox.innerHTML = `<div><strong>Día ${clickedStr}:</strong> libre. Seleccionado en el formulario (entrada: <strong>${checkInInput.value}</strong>, salida: <strong>${checkOutInput.value}</strong>).</div>`;
+      }
+      dayDetailBox.classList.add('visible');
+    }
+
+    function attachDayClickHandlers() {
+      calendarView.querySelectorAll('[data-date]').forEach(el => {
+        el.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          const ymd = el.getAttribute('data-date');
+          if (ymd) {
+            handleDayClick(parseYMD(ymd));
+          }
+        });
+      });
+    }
+
     function renderMonthView() {
       const year = state.cursorDate.getFullYear();
       const month = state.cursorDate.getMonth();
@@ -565,8 +745,9 @@
 
       for (let day = 1; day <= lastDay.getDate(); day++) {
         const current = new Date(year, month, day);
+        const ymd = toYMD(current);
         const activeStays = staysOnDate(current);
-        html += `<div class="day-cell"><span class="day-num">${day}</span>`;
+        html += `<div class="day-cell" data-date="${ymd}"><span class="day-num">${day}</span>`;
         activeStays.forEach(st => {
           html += `<span class="stay-pill" style="background:${st.color}" title="${st.who} (${st.startStr} a ${st.endStr})">${st.who}</span>`;
         });
@@ -575,6 +756,7 @@
 
       html += '</div>';
       calendarView.innerHTML = html;
+      attachDayClickHandlers();
     }
 
     function renderYearView() {
@@ -598,13 +780,14 @@
 
         for (let d = 1; d <= lastDay; d++) {
           const dayObj = new Date(year, m, d);
+          const ymd = toYMD(dayObj);
           const dayStays = staysOnDate(dayObj);
           if (dayStays.length > 0) {
             const bg = dayStays[dayStays.length - 1].color;
-            const title = dayStays.map(s => s.who).join(', ');
-            html += `<div class="mini-day" style="background:${bg};color:#fff;font-weight:700" title="${title}">${d}</div>`;
+            const title = dayStays.map(s => `${s.who} (${s.startStr} a ${s.endStr})`).join(' | ');
+            html += `<div class="mini-day" data-date="${ymd}" style="background:${bg};color:#fff;font-weight:700" title="${title}">${d}</div>`;
           } else {
-            html += `<div class="mini-day">${d}</div>`;
+            html += `<div class="mini-day" data-date="${ymd}" title="${ymd} (libre)">${d}</div>`;
           }
         }
 
@@ -612,6 +795,7 @@
       }
       html += '</div>';
       calendarView.innerHTML = html;
+      attachDayClickHandlers();
     }
 
     function renderBookingsList() {
@@ -638,6 +822,50 @@
       }
       renderBookingsList();
     }
+
+    function selectPlatformTab(platform) {
+      const isIphone = platform === 'iphone';
+      tabIphone.classList.toggle('active', isIphone);
+      tabAndroid.classList.toggle('active', !isIphone);
+      panelIphone.classList.toggle('active', isIphone);
+      panelAndroid.classList.toggle('active', !isIphone);
+    }
+
+    function openInstallModal() {
+      const ua = navigator.userAgent || '';
+      const isIos = /iPhone|iPad|iPod/i.test(ua);
+      selectPlatformTab(isIos ? 'iphone' : 'android');
+      nativePromptArea.style.display = state.deferredInstallPrompt ? 'block' : 'none';
+      installModal.classList.add('open');
+    }
+
+    function closeInstallModal() {
+      installModal.classList.remove('open');
+    }
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      state.deferredInstallPrompt = e;
+      if (installModal.classList.contains('open')) {
+        nativePromptArea.style.display = 'block';
+      }
+    });
+
+    document.getElementById('btnInstallGuide').addEventListener('click', openInstallModal);
+    document.getElementById('btnCloseModal').addEventListener('click', closeInstallModal);
+    installModal.addEventListener('click', (e) => {
+      if (e.target === installModal) closeInstallModal();
+    });
+    tabAndroid.addEventListener('click', () => selectPlatformTab('android'));
+    tabIphone.addEventListener('click', () => selectPlatformTab('iphone'));
+
+    document.getElementById('btnNativeInstall').addEventListener('click', async () => {
+      if (!state.deferredInstallPrompt) return;
+      state.deferredInstallPrompt.prompt();
+      await state.deferredInstallPrompt.userChoice;
+      state.deferredInstallPrompt = null;
+      nativePromptArea.style.display = 'none';
+    });
 
     document.getElementById('bookingForm').addEventListener('submit', async (e) => {
       e.preventDefault();
