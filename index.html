@@ -26,8 +26,11 @@
       box-sizing: border-box;
     }
 
-    body {
+    html, body {
       margin: 0;
+      padding: 0;
+      max-width: 100%;
+      overflow-x: hidden;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background: var(--bg);
       color: var(--text);
@@ -37,25 +40,28 @@
     header {
       background: var(--primary);
       color: #ffffff;
-      padding: 1rem 1.25rem;
+      padding: 0.9rem 1rem;
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
-      gap: 0.75rem;
+      gap: 0.6rem;
+      width: 100%;
     }
 
     header h1 {
       margin: 0;
-      font-size: 1.15rem;
+      font-size: 1.05rem;
       font-weight: 700;
+      min-width: 0;
     }
 
     .header-actions {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.5rem;
+      gap: 0.45rem;
       align-items: center;
+      min-width: 0;
     }
 
     button {
@@ -63,16 +69,30 @@
       cursor: pointer;
       border-radius: 8px;
       border: 1px solid var(--border);
-      padding: 0.5rem 0.85rem;
+      padding: 0.45rem 0.75rem;
       background: #ffffff;
       color: var(--text);
       font-weight: 600;
+      font-size: 0.88rem;
+      max-width: 100%;
     }
 
     button.primary {
       background: #0284c7;
       border-color: #0284c7;
       color: #ffffff;
+    }
+
+    button.danger-outline {
+      background: #ffffff;
+      border-color: #fecaca;
+      color: var(--danger);
+      padding: 0.3rem 0.6rem;
+      font-size: 0.78rem;
+    }
+
+    button.danger-outline:hover {
+      background: var(--danger-bg);
     }
 
     button.active {
@@ -87,30 +107,37 @@
     }
 
     .container {
+      width: 100%;
       max-width: 1200px;
       margin: 0 auto;
-      padding: 1rem;
+      padding: 0.85rem;
       display: grid;
-      gap: 1rem;
+      gap: 0.9rem;
     }
 
     .card {
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 1rem;
+      padding: 0.9rem;
+      min-width: 0;
+      overflow: hidden;
     }
 
     .card h2 {
-      margin: 0 0 0.75rem 0;
+      margin: 0 0 0.7rem 0;
       font-size: 1rem;
     }
 
     .form-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 0.75rem;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 0.7rem;
       align-items: end;
+    }
+
+    .comment-field {
+      grid-column: 1 / -1;
     }
 
     label {
@@ -119,15 +146,25 @@
       gap: 0.3rem;
       font-size: 0.85rem;
       font-weight: 600;
+      min-width: 0;
     }
 
-    select, input[type="date"] {
+    select, input[type="date"], input[type="text"] {
       font: inherit;
-      padding: 0.55rem 0.65rem;
+      padding: 0.5rem 0.6rem;
       border: 1px solid var(--border);
       border-radius: 8px;
       background: #ffffff;
       color: var(--text);
+      width: 100%;
+      min-width: 0;
+    }
+
+    .char-counter {
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-align: right;
+      margin-top: 0.15rem;
     }
 
     .alert {
@@ -152,12 +189,66 @@
       border: 1px solid #bbf7d0;
     }
 
+    .checkout-box {
+      margin-top: 0.85rem;
+      padding: 0.9rem;
+      border-radius: 10px;
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      display: none;
+    }
+
+    .checkout-box.visible {
+      display: block;
+    }
+
+    .checkout-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.6rem;
+    }
+
+    .checkout-header h3 {
+      margin: 0;
+      font-size: 0.95rem;
+    }
+
+    .checkout-groups {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 0.75rem;
+      font-size: 0.86rem;
+    }
+
+    .checkout-group {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.65rem 0.75rem;
+    }
+
+    .checkout-group strong {
+      display: block;
+      margin-bottom: 0.35rem;
+      color: var(--primary);
+      font-size: 0.84rem;
+    }
+
+    .checkout-group ul {
+      margin: 0;
+      padding-left: 1.15rem;
+      display: grid;
+      gap: 0.25rem;
+    }
+
     .toolbar {
       display: flex;
       flex-wrap: wrap;
       justify-content: space-between;
       align-items: center;
-      gap: 0.75rem;
+      gap: 0.6rem;
       margin-bottom: 0.75rem;
     }
 
@@ -165,38 +256,48 @@
       display: flex;
       flex-wrap: wrap;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.4rem;
+      min-width: 0;
     }
 
     .period-select {
-      padding: 0.45rem 0.6rem;
+      padding: 0.42rem 0.5rem;
       border-radius: 8px;
       border: 1px solid var(--border);
       background: #ffffff;
       color: var(--text);
       font-weight: 600;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
+      width: auto;
+      max-width: 100%;
     }
 
     .month-grid {
       display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 4px;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 3px;
+      width: 100%;
+      min-width: 0;
     }
 
     .dow {
       text-align: center;
-      font-size: 0.78rem;
+      font-size: 0.74rem;
       font-weight: 700;
       color: var(--muted);
-      padding: 0.35rem 0;
+      padding: 0.3rem 0;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .day-cell {
-      min-height: 82px;
+      min-height: 74px;
+      min-width: 0;
+      overflow: hidden;
       border: 1px solid var(--border);
       border-radius: 6px;
-      padding: 0.3rem;
+      padding: 0.25rem;
       background: #ffffff;
       display: flex;
       flex-direction: column;
@@ -219,43 +320,49 @@
     }
 
     .day-num {
-      font-size: 0.78rem;
+      font-size: 0.74rem;
       font-weight: 700;
       color: var(--muted);
+      line-height: 1.1;
     }
 
     .stay-pill {
-      font-size: 0.7rem;
+      font-size: 0.65rem;
       font-weight: 600;
       color: #ffffff;
-      padding: 2px 5px;
+      padding: 2px 4px;
       border-radius: 4px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      max-width: 100%;
+      line-height: 1.25;
     }
 
     .year-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 0.85rem;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 0.75rem;
+      width: 100%;
+      min-width: 0;
     }
 
     .mini-month {
       border: 1px solid var(--border);
       border-radius: 8px;
-      padding: 0.6rem;
+      padding: 0.55rem;
+      min-width: 0;
     }
 
     .mini-month h3 {
       margin: 0 0 0.4rem 0;
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       text-transform: capitalize;
     }
 
     .mini-days {
       display: grid;
-      grid-template-columns: repeat(7, 1fr);
+      grid-template-columns: repeat(7, minmax(0, 1fr));
       gap: 2px;
       text-align: center;
       font-size: 0.72rem;
@@ -266,6 +373,7 @@
       border-radius: 4px;
       cursor: pointer;
       border: 1px solid transparent;
+      min-width: 0;
     }
 
     .mini-day:hover {
@@ -274,13 +382,14 @@
     }
 
     .day-detail-box {
-      margin-top: 0.85rem;
-      padding: 0.75rem 0.9rem;
+      margin-top: 0.8rem;
+      padding: 0.7rem 0.85rem;
       border-radius: 8px;
       background: var(--info-bg);
       border: 1px solid var(--info-border);
-      font-size: 0.88rem;
+      font-size: 0.86rem;
       display: none;
+      word-break: break-word;
     }
 
     .day-detail-box.visible {
@@ -290,6 +399,7 @@
     .bookings-list {
       display: grid;
       gap: 0.45rem;
+      min-width: 0;
     }
 
     .booking-row {
@@ -298,11 +408,72 @@
       justify-content: space-between;
       align-items: center;
       gap: 0.5rem;
-      padding: 0.55rem 0.75rem;
+      padding: 0.55rem 0.7rem;
       border: 1px solid var(--border);
       border-left-width: 6px;
       border-radius: 8px;
-      font-size: 0.88rem;
+      font-size: 0.84rem;
+      min-width: 0;
+      word-break: break-word;
+    }
+
+    .booking-row.cancelled {
+      background: #f8fafc;
+      opacity: 0.72;
+      border-left-color: #94a3b8 !important;
+    }
+
+    .booking-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      min-width: 0;
+    }
+
+    .booking-row.cancelled .booking-title {
+      text-decoration: line-through;
+      color: var(--muted);
+    }
+
+    .badge-cancelled {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .booking-comment {
+      font-size: 0.8rem;
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    .family-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 0.65rem;
+    }
+
+    .stat-box {
+      border: 1px solid var(--border);
+      border-left-width: 6px;
+      border-radius: 8px;
+      padding: 0.65rem 0.75rem;
+      background: #ffffff;
+    }
+
+    .stat-name {
+      font-weight: 700;
+      font-size: 0.92rem;
+    }
+
+    .stat-detail {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-top: 0.2rem;
     }
 
     .modal-backdrop {
@@ -326,7 +497,7 @@
       border-radius: 12px;
       max-width: 520px;
       width: 100%;
-      padding: 1.25rem;
+      padding: 1.15rem;
       box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
     }
 
@@ -340,7 +511,7 @@
 
     .modal-header h2 {
       margin: 0;
-      font-size: 1.05rem;
+      font-size: 1rem;
     }
 
     .guide-tabs {
@@ -351,7 +522,7 @@
 
     .guide-panel {
       display: none;
-      font-size: 0.9rem;
+      font-size: 0.88rem;
     }
 
     .guide-panel.active {
@@ -363,6 +534,38 @@
       padding-left: 1.2rem;
       display: grid;
       gap: 0.45rem;
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        padding: 0.6rem;
+        gap: 0.7rem;
+      }
+
+      .card {
+        padding: 0.75rem;
+        border-radius: 10px;
+      }
+
+      .day-cell {
+        min-height: 60px;
+        padding: 0.18rem;
+        border-radius: 4px;
+      }
+
+      .stay-pill {
+        font-size: 0.58rem;
+        padding: 1px 3px;
+      }
+
+      .dow {
+        font-size: 0.68rem;
+      }
+
+      button {
+        padding: 0.42rem 0.62rem;
+        font-size: 0.8rem;
+      }
     }
   </style>
 </head>
@@ -397,8 +600,55 @@
         </label>
 
         <button id="submitBtn" class="primary" type="submit">Guardar reserva</button>
+
+        <div class="comment-field">
+          <label>
+            Comentario (opcional, estilo tuit)
+            <input id="commentInput" type="text" maxlength="280" placeholder="Ej.: Llegamos por la tarde, llevamos compra..." />
+          </label>
+          <div id="charCounter" class="char-counter">0 / 280</div>
+        </div>
       </form>
+
       <div id="formAlert" class="alert" role="alert"></div>
+
+      <div id="checkoutBox" class="checkout-box" aria-live="polite">
+        <div class="checkout-header">
+          <h3>Antes de dejar la casa (checklist de salida)</h3>
+          <button id="btnCloseCheckout" type="button">Ocultar</button>
+        </div>
+        <div class="checkout-groups">
+          <div class="checkout-group">
+            <strong>Suministros y climatización</strong>
+            <ul>
+              <li>Cerrar llave del gas</li>
+              <li>Apagar y desenchufar caldera</li>
+              <li>Luces apagadas</li>
+            </ul>
+          </div>
+          <div class="checkout-group">
+            <strong>Frigorífico, congelador y cocina</strong>
+            <ul>
+              <li>Desenchufar frigorífico y dejar abierto</li>
+              <li>Desenchufar congelador y dejar abierto</li>
+              <li>Cafetera vacía</li>
+              <li>Vaciar hervidor de agua</li>
+              <li>Tapar desagües</li>
+              <li>Tirar basura</li>
+            </ul>
+          </div>
+          <div class="checkout-group">
+            <strong>Plancha, puertas y ventanas</strong>
+            <ul>
+              <li>Vaciar plancha</li>
+              <li>Puertas dentro abiertas</li>
+              <li>Persianas/ventanas</li>
+              <li>Puerta pequeña y puerta coches cerradas</li>
+              <li>Puerta del porche cerrada</li>
+            </ul>
+          </div>
+        </div>
+      </div>
     </section>
 
     <section class="card">
@@ -437,6 +687,11 @@
     <section class="card">
       <h2>Estancias registradas</h2>
       <div id="bookingsList" class="bookings-list"></div>
+    </section>
+
+    <section class="card">
+      <h2>Recuento por familia (año seleccionado)</h2>
+      <div id="familyStats" class="family-stats"></div>
     </section>
   </main>
 
@@ -488,25 +743,32 @@
       'Jose Manuel': '#D97706'
     };
 
+    const FAMILY_LABELS = {
+      'Victor': 'Familia Victor',
+      'Espe': 'Familia Espe',
+      'Felix': 'Familia Felix',
+      'Jose Manuel': 'Familia Jose Manuel'
+    };
+
     const WHATSAPP_TO_FAMILY = {
       'Víctor': 'Victor',
       'Intxi': 'Victor',
       'Arturo Padre': 'Espe',
-      'Artuti España': 'Espe',
+      'Arturo': 'Espe',
       'Espe': 'Espe',
       'Estefania': 'Espe',
-      'Manolo Hernández Sobrino': 'Espe',
+      'Manolo': 'Espe',
       'Felix': 'Felix',
-      'Maria Felix/Móvil': 'Felix',
+      'María Eugenia': 'Felix',
       'Jose Manuel': 'Jose Manuel',
-      'Juan Benito Del Castillo': 'Jose Manuel',
+      'Juan': 'Jose Manuel',
       'Mario': 'Jose Manuel'
     };
 
     const LEGACY_MATCHERS = [
       { family: 'Espe', keywords: ['espe', 'arturo', 'artuti', 'estefania', 'estefanía', 'manolo', 'familia hv'] },
       { family: 'Victor', keywords: ['victor', 'víctor', 'intxi', 'andrés', 'andres', 'julia', 'ibai', 'barbacoa'] },
-      { family: 'Felix', keywords: ['felix', 'félix', 'maría', 'maria', 'felixín', 'felixn'] },
+      { family: 'Felix', keywords: ['felix', 'félix', 'maría', 'maria', 'eugenia', 'felixín', 'felixn'] },
       { family: 'Jose Manuel', keywords: ['jose manuel', 'josé manuel', 'jose eclipse', 'juan', 'mario'] }
     ];
 
@@ -521,13 +783,17 @@
     const whoSelect = document.getElementById('whoSelect');
     const checkInInput = document.getElementById('checkIn');
     const checkOutInput = document.getElementById('checkOut');
+    const commentInput = document.getElementById('commentInput');
+    const charCounter = document.getElementById('charCounter');
     const submitBtn = document.getElementById('submitBtn');
     const formAlert = document.getElementById('formAlert');
+    const checkoutBox = document.getElementById('checkoutBox');
     const calendarView = document.getElementById('calendarView');
     const dayDetailBox = document.getElementById('dayDetailBox');
     const monthSelect = document.getElementById('monthSelect');
     const yearSelect = document.getElementById('yearSelect');
     const bookingsList = document.getElementById('bookingsList');
+    const familyStats = document.getElementById('familyStats');
     const installModal = document.getElementById('installModal');
     const nativePromptArea = document.getElementById('nativePromptArea');
     const tabAndroid = document.getElementById('tabAndroid');
@@ -605,30 +871,30 @@
         .replace(/[\u0300-\u036f]/g, '');
     }
 
-    function resolveColorFromEvent(ev, whoLabel) {
+    function resolveFamilyFromEvent(ev, whoLabel) {
       const desc = ev.description || '';
       const famMatch = desc.match(/Familia:\s*(.+)/i);
       if (famMatch) {
         const famKey = famMatch[1].trim();
         if (FAMILY_COLORS[famKey]) {
-          return FAMILY_COLORS[famKey];
+          return { key: famKey, color: FAMILY_COLORS[famKey] };
         }
       }
 
-      const titleClean = (ev.title || '').replace(/^Casa Alaejos:\s*/i, '').trim();
+      const titleClean = (ev.title || '').replace(/^\[CANCELADO\]\s*/i, '').replace(/^Casa Alaejos:\s*/i, '').trim();
       if (WHATSAPP_TO_FAMILY[titleClean]) {
         const famKey = WHATSAPP_TO_FAMILY[titleClean];
-        return FAMILY_COLORS[famKey] || '#64748B';
+        return { key: famKey, color: FAMILY_COLORS[famKey] || '#64748B' };
       }
 
       const haystack = normalizeText(`${titleClean} ${whoLabel} ${desc}`);
       for (const rule of LEGACY_MATCHERS) {
         if (rule.keywords.some(kw => haystack.includes(normalizeText(kw)))) {
-          return FAMILY_COLORS[rule.family] || '#64748B';
+          return { key: rule.family, color: FAMILY_COLORS[rule.family] || '#64748B' };
         }
       }
 
-      return '#64748B';
+      return { key: 'Sin asignar', color: '#64748B' };
     }
 
     function normalizeEvents(rawEvents) {
@@ -643,15 +909,26 @@
           endDateInclusive = new Date(startDate.getTime());
         }
 
-        const whoMatch = (ev.description || '').match(/Reservado por:\s*(.+)/i);
-        const who = whoMatch
-          ? whoMatch[1].trim()
-          : (ev.title || 'Reserva').replace(/^Casa Alaejos:\s*/i, '').trim();
+        const rawTitle = ev.title || '';
+        const desc = ev.description || '';
+        const cancelled = Boolean(ev.cancelled) || /^\[CANCELADO\]/i.test(rawTitle) || /Estado:\s*CANCELADO/i.test(desc);
+
+        const cleanTitle = rawTitle.replace(/^\[CANCELADO\]\s*/i, '').replace(/^Casa Alaejos:\s*/i, '').trim();
+        const whoMatch = desc.match(/Reservado por:\s*(.+)/i);
+        const who = whoMatch ? whoMatch[1].trim() : (cleanTitle || 'Reserva');
+
+        const commentMatch = desc.match(/Comentario:\s*(.+)/i);
+        const comment = commentMatch ? commentMatch[1].trim() : '';
+
+        const fam = resolveFamilyFromEvent(ev, who);
 
         return {
-          id: ev.id || `${who}-${toYMD(startDate)}-${toYMD(endDateInclusive)}`,
+          id: ev.id || '',
           who,
-          color: resolveColorFromEvent(ev, who),
+          comment,
+          cancelled,
+          family: fam.key,
+          color: fam.color,
           startDate,
           endDate: endDateInclusive,
           startStr: toYMD(startDate),
@@ -679,13 +956,58 @@
       }
     }
 
+    function activeBookings() {
+      return state.bookings.filter(b => !b.cancelled);
+    }
+
     function hasOverlap(startA, endA) {
-      return state.bookings.filter(b => startA <= b.endDate && endA >= b.startDate);
+      return activeBookings().filter(b => startA <= b.endDate && endA >= b.startDate);
     }
 
     function staysOnDate(dateObj) {
       const d = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
-      return state.bookings.filter(b => d >= b.startDate && d <= b.endDate);
+      return activeBookings().filter(b => d >= b.startDate && d <= b.endDate);
+    }
+
+    function countDaysInYearForFamily(year, famKey) {
+      const yearStart = new Date(year, 0, 1);
+      const yearEnd = new Date(year, 11, 31);
+      const uniqueDays = new Set();
+      let staysCount = 0;
+
+      activeBookings().forEach(b => {
+        if (b.family !== famKey) return;
+        const ovStart = b.startDate > yearStart ? b.startDate : yearStart;
+        const ovEnd = b.endDate < yearEnd ? b.endDate : yearEnd;
+        if (ovStart <= ovEnd) {
+          staysCount += 1;
+          let cur = new Date(ovStart.getTime());
+          while (cur <= ovEnd) {
+            uniqueDays.add(toYMD(cur));
+            cur = addDaysDate(cur, 1);
+          }
+        }
+      });
+
+      return { days: uniqueDays.size, stays: staysCount };
+    }
+
+    function renderFamilyStats() {
+      const year = state.cursorDate.getFullYear();
+      familyStats.innerHTML = '';
+
+      Object.entries(FAMILY_LABELS).forEach(([key, label]) => {
+        const color = FAMILY_COLORS[key] || '#64748B';
+        const metrics = countDaysInYearForFamily(year, key);
+        const box = document.createElement('div');
+        box.className = 'stat-box';
+        box.style.borderLeftColor = color;
+        box.innerHTML = `
+          <div class="stat-name">${label} (${year})</div>
+          <div class="stat-detail">${metrics.days} días · ${metrics.stays} estancias</div>
+        `;
+        familyStats.appendChild(box);
+      });
     }
 
     function handleDayClick(dateObj) {
@@ -704,7 +1026,10 @@
 
       if (dayStays.length > 0) {
         const itemsHtml = dayStays
-          .map(st => `<div><strong style="color:${st.color}">● ${st.who}</strong> (${st.startStr} → ${st.endStr})</div>`)
+          .map(st => {
+            const cmt = st.comment ? ` — <em>${st.comment}</em>` : '';
+            return `<div><strong style="color:${st.color}">● ${st.who}</strong> (${st.startStr} → ${st.endStr})${cmt}</div>`;
+          })
           .join('');
         dayDetailBox.innerHTML = `<div><strong>Día ${clickedStr}:</strong> ocupaciones previstas:</div>${itemsHtml}`;
       } else {
@@ -749,7 +1074,8 @@
         const activeStays = staysOnDate(current);
         html += `<div class="day-cell" data-date="${ymd}"><span class="day-num">${day}</span>`;
         activeStays.forEach(st => {
-          html += `<span class="stay-pill" style="background:${st.color}" title="${st.who} (${st.startStr} a ${st.endStr})">${st.who}</span>`;
+          const tip = st.comment ? `${st.who} (${st.startStr} a ${st.endStr}) - ${st.comment}` : `${st.who} (${st.startStr} a ${st.endStr})`;
+          html += `<span class="stay-pill" style="background:${st.color}" title="${tip}">${st.who}</span>`;
         });
         html += '</div>';
       }
@@ -798,19 +1124,72 @@
       attachDayClickHandlers();
     }
 
+    async function cancelBooking(booking) {
+      if (!booking.id) {
+        showAlert('error', 'Este evento no tiene identificador disponible para cancelar desde la web.');
+        return;
+      }
+
+      const confirmed = window.confirm(
+        `¿Marcar como CANCELADA la reserva de ${booking.who} (${booking.startStr} → ${booking.endStr})?\n\nNo se borrará del calendario de Google, pero quedará marcada como [CANCELADO] y liberará los días.`
+      );
+      if (!confirmed) return;
+
+      clearAlert();
+      try {
+        await fetch(SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'cancel',
+            id: booking.id
+          })
+        });
+
+        showAlert('ok', `Reserva de ${booking.who} (${booking.startStr} → ${booking.endStr}) marcada como cancelada. Actualizando...`);
+        setTimeout(() => {
+          loadBookings();
+        }, 1200);
+      } catch (err) {
+        showAlert('error', 'No se pudo cancelar la reserva: ' + err.message);
+      }
+    }
+
     function renderBookingsList() {
       if (state.bookings.length === 0) {
         bookingsList.innerHTML = '<div style="color:#64748b;font-size:0.9rem">No hay estancias registradas en el rango consultado.</div>';
         return;
       }
 
-      bookingsList.innerHTML = state.bookings.map(b => `
-        <div class="booking-row" style="border-left-color:${b.color}">
-          <div>
+      bookingsList.innerHTML = '';
+      state.bookings.forEach(b => {
+        const row = document.createElement('div');
+        row.className = 'booking-row' + (b.cancelled ? ' cancelled' : '');
+        row.style.borderLeftColor = b.color;
+
+        const info = document.createElement('div');
+        info.className = 'booking-info';
+        info.innerHTML = `
+          <div class="booking-title">
             <strong>${b.who}</strong> · ${b.startStr} → ${b.endStr}
+            ${b.cancelled ? ' <span class="badge-cancelled">CANCELADA</span>' : ''}
           </div>
-        </div>
-      `).join('');
+          ${b.comment ? `<div class="booking-comment">“${b.comment}”</div>` : ''}
+        `;
+        row.appendChild(info);
+
+        if (!b.cancelled && b.id) {
+          const btnCancel = document.createElement('button');
+          btnCancel.type = 'button';
+          btnCancel.className = 'danger-outline';
+          btnCancel.textContent = 'Cancelar';
+          btnCancel.addEventListener('click', () => cancelBooking(b));
+          row.appendChild(btnCancel);
+        }
+
+        bookingsList.appendChild(row);
+      });
     }
 
     function renderAll() {
@@ -821,6 +1200,7 @@
         renderYearView();
       }
       renderBookingsList();
+      renderFamilyStats();
     }
 
     function selectPlatformTab(platform) {
@@ -851,6 +1231,14 @@
       }
     });
 
+    commentInput.addEventListener('input', () => {
+      charCounter.textContent = `${commentInput.value.length} / 280`;
+    });
+
+    document.getElementById('btnCloseCheckout').addEventListener('click', () => {
+      checkoutBox.classList.remove('visible');
+    });
+
     document.getElementById('btnInstallGuide').addEventListener('click', openInstallModal);
     document.getElementById('btnCloseModal').addEventListener('click', closeInstallModal);
     installModal.addEventListener('click', (e) => {
@@ -874,6 +1262,7 @@
       const who = whoSelect.value;
       const checkInStr = checkInInput.value;
       const checkOutStr = checkOutInput.value;
+      const comment = commentInput.value.trim().slice(0, 280);
 
       if (!who || !checkInStr || !checkOutStr) {
         showAlert('error', 'Completa quién va, la fecha de entrada y la fecha de salida.');
@@ -905,17 +1294,22 @@
           mode: 'no-cors',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({
+            action: 'create',
             who,
             family: familyKey,
             color: colorHex,
+            comment,
             checkIn: checkInStr,
             checkOut: checkOutStr
           })
         });
 
-        showAlert('ok', `Reserva enviada para ${who} (${checkInStr} a ${checkOutStr}). Actualizando calendario...`);
+        showAlert('ok', `Reserva enviada para ${who} (${checkInStr} a ${checkOutStr}). Revisa el checklist de salida abajo.`);
+        checkoutBox.classList.add('visible');
         checkInInput.value = '';
         checkOutInput.value = '';
+        commentInput.value = '';
+        charCounter.textContent = '0 / 280';
 
         setTimeout(() => {
           loadBookings();
