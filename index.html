@@ -1,200 +1,1789 @@
-const CALENDAR_ID = 'c383ff6e4a79e8d0bbd3f9a564e14e386a41e58c6491f8d1aaf97df4dd7b3a8b@group.calendar.google.com';
-const TIMEZONE = 'Europe/Madrid';
-
-function doGet(e) {
-  try {
-    const cal = CalendarApp.getCalendarById(CALENDAR_ID);
-    if (!cal) {
-      return jsonResponse({ ok: false, error: 'Calendario no encontrado' });
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0f172a" />
+  <title>Ocupaciones Casa Alaejos</title>
+  <link rel="manifest" href="manifest.json" />
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --primary: #0f172a;
+      --danger: #b91c1c;
+      --danger-bg: #fef2f2;
+      --ok: #15803d;
+      --ok-bg: #f0fdf4;
+      --info-bg: #f0f9ff;
+      --info-border: #bae6fd;
     }
 
-    const now = new Date();
-    const start = new Date(now.getFullYear() - 1, 0, 1);
-    const end = new Date(now.getFullYear() + 2, 11, 31, 23, 59, 59);
-    const events = cal.getEvents(start, end);
+    * {
+      box-sizing: border-box;
+    }
 
-    const items = events.map(ev => {
-      const startDate = ev.getStartTime();
-      const endDate = ev.getEndTime();
-      const isAllDay = ev.isAllDayEvent();
-      const title = ev.getTitle() || '';
-      const description = ev.getDescription() || '';
-      const isCancelled = /^\[CANCELADO\]/im.test(title.trim()) || /^Estado:\s*CANCELADO/im.test(description);
+    html, body {
+      margin: 0;
+      padding: 0;
+      max-width: 100%;
+      overflow-x: hidden;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+    }
 
-      return {
-        id: ev.getId(),
-        title: title,
-        description: description,
-        isAllDay: isAllDay,
-        cancelled: isCancelled,
-        start: formatDateISO(startDate, isAllDay),
-        end: formatDateISO(endDate, isAllDay)
-      };
+    header {
+      background: var(--primary);
+      color: #ffffff;
+      padding: 0.9rem 1rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.6rem;
+      width: 100%;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 700;
+      min-width: 0;
+    }
+
+    .header-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      align-items: center;
+      min-width: 0;
+    }
+
+    button {
+      font: inherit;
+      cursor: pointer;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      padding: 0.45rem 0.75rem;
+      background: #ffffff;
+      color: var(--text);
+      font-weight: 600;
+      font-size: 0.88rem;
+      max-width: 100%;
+    }
+
+    button.primary {
+      background: #0284c7;
+      border-color: #0284c7;
+      color: #ffffff;
+    }
+
+    button.danger-outline {
+      background: #ffffff;
+      border-color: #fecaca;
+      color: var(--danger);
+      padding: 0.3rem 0.6rem;
+      font-size: 0.78rem;
+    }
+
+    button.danger-outline:hover {
+      background: var(--danger-bg);
+    }
+
+    button.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #ffffff;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0.85rem;
+      display: grid;
+      gap: 0.9rem;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 0.9rem;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .card h2 {
+      margin: 0 0 0.7rem 0;
+      font-size: 1rem;
+    }
+
+    .collapse-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      background: transparent;
+      border: none;
+      padding: 0;
+      margin: 0;
+      text-align: left;
+      color: var(--text);
+    }
+
+    .collapse-toggle h2 {
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .chevron {
+      display: inline-block;
+      font-size: 1.15rem;
+      line-height: 1;
+      color: var(--muted);
+      transition: transform 0.18s ease;
+      transform: rotate(90deg);
+    }
+
+    .chevron.collapsed {
+      transform: rotate(0deg);
+    }
+
+    .collapsible-body {
+      margin-top: 0.7rem;
+    }
+
+    .collapsible-body.collapsed {
+      display: none;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 0.7rem;
+      align-items: end;
+    }
+
+    .comment-field {
+      grid-column: 1 / -1;
+    }
+
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      min-width: 0;
+    }
+
+    select, input[type="date"], input[type="text"] {
+      font: inherit;
+      padding: 0.5rem 0.6rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #ffffff;
+      color: var(--text);
+      width: 100%;
+      min-width: 0;
+    }
+
+    .char-counter {
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-align: right;
+      margin-top: 0.15rem;
+    }
+
+    .alert {
+      margin-top: 0.75rem;
+      padding: 0.65rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      display: none;
+    }
+
+    .alert.error {
+      display: block;
+      background: var(--danger-bg);
+      color: var(--danger);
+      border: 1px solid #fecaca;
+    }
+
+    .alert.ok {
+      display: block;
+      background: var(--ok-bg);
+      color: var(--ok);
+      border: 1px solid #bbf7d0;
+    }
+
+    .checkout-box {
+      margin-top: 0.85rem;
+      padding: 0.9rem;
+      border-radius: 10px;
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      display: none;
+    }
+
+    .checkout-box.visible {
+      display: block;
+    }
+
+    .checkout-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.6rem;
+    }
+
+    .checkout-header h3 {
+      margin: 0;
+      font-size: 0.95rem;
+    }
+
+    .checkout-groups {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 0.75rem;
+      font-size: 0.86rem;
+    }
+
+    .checkout-group {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.65rem 0.75rem;
+    }
+
+    .checkout-group strong {
+      display: block;
+      margin-bottom: 0.35rem;
+      color: var(--primary);
+      font-size: 0.84rem;
+    }
+
+    .checkout-group ul {
+      margin: 0;
+      padding-left: 1.15rem;
+      display: grid;
+      gap: 0.25rem;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .nav-group {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.4rem;
+      min-width: 0;
+    }
+
+    .period-select {
+      padding: 0.42rem 0.5rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #ffffff;
+      color: var(--text);
+      font-weight: 600;
+      font-size: 0.85rem;
+      width: auto;
+      max-width: 100%;
+    }
+
+    .month-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 3px;
+      width: 100%;
+      min-width: 0;
+    }
+
+    .dow {
+      text-align: center;
+      font-size: 0.74rem;
+      font-weight: 700;
+      color: var(--muted);
+      padding: 0.3rem 0;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .day-cell {
+      min-height: 74px;
+      min-width: 0;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.25rem;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      cursor: pointer;
+      transition: border-color 0.12s ease;
+    }
+
+    .day-cell:hover {
+      border-color: #0284c7;
+    }
+
+    .day-cell.today {
+      border: 2px solid #0f172a;
+      background: #fffbeb;
+    }
+
+    .day-cell.empty {
+      background: #f1f5f9;
+      cursor: default;
+    }
+
+    .day-cell.empty:hover {
+      border-color: var(--border);
+    }
+
+    .day-num {
+      font-size: 0.74rem;
+      font-weight: 700;
+      color: var(--muted);
+      line-height: 1.1;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .today-tag {
+      font-size: 0.6rem;
+      font-weight: 800;
+      background: #0f172a;
+      color: #ffffff;
+      padding: 1px 4px;
+      border-radius: 3px;
+      text-transform: uppercase;
+    }
+
+    .stay-pill {
+      font-size: 0.65rem;
+      font-weight: 600;
+      color: #ffffff;
+      padding: 2px 4px;
+      border-radius: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+      line-height: 1.25;
+      cursor: pointer;
+    }
+
+    .stay-pill:hover {
+      filter: brightness(0.92);
+      outline: 1px solid #0f172a;
+    }
+
+    .year-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 0.75rem;
+      width: 100%;
+      min-width: 0;
+    }
+
+    .mini-month {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.55rem;
+      min-width: 0;
+    }
+
+    .mini-month h3 {
+      margin: 0 0 0.4rem 0;
+      font-size: 0.88rem;
+      text-transform: capitalize;
+      cursor: pointer;
+      color: #0284c7;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .mini-month h3:hover {
+      text-decoration: underline;
+    }
+
+    .mini-days {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 2px;
+      text-align: center;
+      font-size: 0.72rem;
+    }
+
+    .mini-day {
+      padding: 4px 0;
+      border-radius: 4px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      min-width: 0;
+    }
+
+    .mini-day.today {
+      outline: 2px solid #0f172a;
+      font-weight: 800;
+    }
+
+    .mini-day:hover {
+      border-color: #0f172a;
+      font-weight: 700;
+    }
+
+    .day-detail-box {
+      margin-top: 0.8rem;
+      padding: 0.75rem 0.9rem;
+      border-radius: 8px;
+      background: var(--info-bg);
+      border: 1px solid var(--info-border);
+      font-size: 0.86rem;
+      display: none;
+      word-break: break-word;
+    }
+
+    .day-detail-box.visible {
+      display: block;
+    }
+
+    .day-stay-item {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0.55rem;
+      margin-top: 0.35rem;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+    }
+
+    .bookings-list {
+      display: grid;
+      gap: 0.45rem;
+      min-width: 0;
+    }
+
+    .booking-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.55rem 0.7rem;
+      border: 1px solid var(--border);
+      border-left-width: 6px;
+      border-radius: 8px;
+      font-size: 0.84rem;
+      min-width: 0;
+      word-break: break-word;
+    }
+
+    .booking-row.editable {
+      cursor: pointer;
+    }
+
+    .booking-row.editable:hover {
+      background: #f8fafc;
+    }
+
+    .booking-row.cancelled {
+      background: #f8fafc;
+      opacity: 0.72;
+      border-left-color: #94a3b8 !important;
+    }
+
+    .booking-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      min-width: 0;
+    }
+
+    .booking-row.cancelled .booking-title {
+      text-decoration: line-through;
+      color: var(--muted);
+    }
+
+    .booking-actions {
+      display: flex;
+      gap: 0.35rem;
+      align-items: center;
+    }
+
+    .badge-cancelled {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .booking-comment {
+      font-size: 0.8rem;
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    .family-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 0.65rem;
+    }
+
+    .stat-box {
+      border: 1px solid var(--border);
+      border-left-width: 6px;
+      border-radius: 8px;
+      padding: 0.65rem 0.75rem;
+      background: #ffffff;
+    }
+
+    .stat-name {
+      font-weight: 700;
+      font-size: 0.92rem;
+    }
+
+    .stat-detail {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-top: 0.2rem;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.55);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      z-index: 1000;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-box {
+      background: #ffffff;
+      color: var(--text);
+      border-radius: 12px;
+      max-width: 520px;
+      width: 100%;
+      padding: 1.15rem;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+      max-height: 92vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .modal-header h2 {
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .guide-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 0.85rem;
+    }
+
+    .guide-panel {
+      display: none;
+      font-size: 0.88rem;
+    }
+
+    .guide-panel.active {
+      display: block;
+    }
+
+    .guide-panel ol {
+      margin: 0.5rem 0 0 0;
+      padding-left: 1.2rem;
+      display: grid;
+      gap: 0.45rem;
+    }
+
+    .edit-form {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .checkbox-row {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .checkbox-row input {
+      width: auto;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        padding: 0.6rem;
+        gap: 0.7rem;
+      }
+
+      .card {
+        padding: 0.75rem;
+        border-radius: 10px;
+      }
+
+      .day-cell {
+        min-height: 60px;
+        padding: 0.18rem;
+        border-radius: 4px;
+      }
+
+      .stay-pill {
+        font-size: 0.58rem;
+        padding: 1px 3px;
+      }
+
+      .dow {
+        font-size: 0.68rem;
+      }
+
+      button {
+        padding: 0.42rem 0.62rem;
+        font-size: 0.8rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Casa Alaejos · Ocupaciones</h1>
+    <div class="header-actions">
+      <button id="btnInstallGuide" class="primary" type="button">Añadir a escritorio</button>
+      <button id="btnReload" type="button">Actualizar calendario</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card" id="bookingCard">
+      <h2>Reservar fechas</h2>
+      <form id="bookingForm" class="form-grid">
+        <label>
+          Quién va
+          <select id="whoSelect" required>
+            <option value="">Selecciona tu nombre...</option>
+          </select>
+        </label>
+
+        <label>
+          Fecha entrada
+          <input id="checkIn" type="date" required />
+        </label>
+
+        <label>
+          Fecha salida
+          <input id="checkOut" type="date" required />
+        </label>
+
+        <button id="submitBtn" class="primary" type="submit">Guardar reserva</button>
+
+        <div class="comment-field">
+          <label>
+            Comentario (opcional, estilo tuit)
+            <input id="commentInput" type="text" maxlength="280" placeholder="Ej.: Llegamos por la tarde, llevamos compra..." />
+          </label>
+          <div id="charCounter" class="char-counter">0 / 280</div>
+        </div>
+      </form>
+
+      <div id="formAlert" class="alert" role="alert"></div>
+
+      <div id="checkoutBox" class="checkout-box" aria-live="polite">
+        <div class="checkout-header">
+          <h3>Antes de dejar la casa (checklist de salida)</h3>
+          <button id="btnCloseCheckout" type="button">Ocultar</button>
+        </div>
+        <div class="checkout-groups">
+          <div class="checkout-group">
+            <strong>Suministros y climatización</strong>
+            <ul>
+              <li>Cerrar llave del gas</li>
+              <li>Apagar y desenchufar caldera</li>
+              <li>Luces apagadas</li>
+            </ul>
+          </div>
+          <div class="checkout-group">
+            <strong>Frigorífico, congelador y cocina</strong>
+            <ul>
+              <li>Desenchufar frigorífico y dejar abierto</li>
+              <li>Desenchufar congelador y dejar abierto</li>
+              <li>Cafetera vacía</li>
+              <li>Vaciar hervidor de agua</li>
+              <li>Tapar desagües</li>
+              <li>Tirar basura</li>
+            </ul>
+          </div>
+          <div class="checkout-group">
+            <strong>Plancha, puertas y ventanas</strong>
+            <ul>
+              <li>Vaciar plancha</li>
+              <li>Puertas dentro abiertas</li>
+              <li>Persianas/ventanas</li>
+              <li>Puerta pequeña y puerta coches cerradas</li>
+              <li>Puerta del porche cerrada</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="toolbar">
+        <div class="nav-group">
+          <button id="viewMonthBtn" class="active" type="button">Vista mensual</button>
+          <button id="viewYearBtn" type="button">Vista anual</button>
+        </div>
+
+        <div class="nav-group">
+          <button id="prevBtn" type="button" aria-label="Anterior">&lt;</button>
+          <select id="monthSelect" class="period-select" aria-label="Seleccionar mes">
+            <option value="0">enero</option>
+            <option value="1">febrero</option>
+            <option value="2">marzo</option>
+            <option value="3">abril</option>
+            <option value="4">mayo</option>
+            <option value="5">junio</option>
+            <option value="6">julio</option>
+            <option value="7">agosto</option>
+            <option value="8">septiembre</option>
+            <option value="9">octubre</option>
+            <option value="10">noviembre</option>
+            <option value="11">diciembre</option>
+          </select>
+          <select id="yearSelect" class="period-select" aria-label="Seleccionar año"></select>
+          <button id="nextBtn" type="button" aria-label="Siguiente">&gt;</button>
+          <button id="todayBtn" type="button">Hoy</button>
+        </div>
+      </div>
+
+      <div id="calendarView"></div>
+      <div id="dayDetailBox" class="day-detail-box" aria-live="polite"></div>
+    </section>
+
+    <section class="card">
+      <button id="toggleBookingsBtn" class="collapse-toggle" type="button" aria-expanded="true" aria-controls="bookingsCollapseBody">
+        <h2>Estancias registradas</h2>
+        <span id="bookingsChevron" class="chevron">›</span>
+      </button>
+      <div id="bookingsCollapseBody" class="collapsible-body">
+        <div id="bookingsList" class="bookings-list"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Recuento por familia (año seleccionado)</h2>
+      <div id="familyStats" class="family-stats"></div>
+    </section>
+  </main>
+
+  <div id="editModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 id="editModalTitle">Editar estancia</h2>
+        <button id="btnCloseEditModal" type="button" aria-label="Cerrar">✕</button>
+      </div>
+
+      <form id="editBookingForm" class="edit-form">
+        <label>
+          Quién va
+          <select id="editWhoSelect" required></select>
+        </label>
+
+        <label>
+          Fecha entrada
+          <input id="editCheckIn" type="date" required />
+        </label>
+
+        <label>
+          Fecha salida
+          <input id="editCheckOut" type="date" required />
+        </label>
+
+        <label>
+          Comentario (opcional, estilo tuit)
+          <input id="editCommentInput" type="text" maxlength="280" />
+        </label>
+
+        <label class="checkbox-row">
+          <input id="editCancelledCheckbox" type="checkbox" />
+          Marcar como cancelada (no se borra del calendario)
+        </label>
+
+        <div class="modal-footer">
+          <button id="btnCancelEditModal" type="button">Cerrar</button>
+          <button id="saveEditBtn" class="primary" type="submit">Guardar cambios</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="installModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="installModalTitle">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 id="installModalTitle">Añadir aplicación a escritorio / inicio</h2>
+        <button id="btnCloseModal" type="button" aria-label="Cerrar">✕</button>
+      </div>
+
+      <div id="nativePromptArea" style="display:none;margin-bottom:0.85rem;">
+        <button id="btnNativeInstall" class="primary" type="button" style="width:100%;">Instalar ahora en este dispositivo</button>
+      </div>
+
+      <div class="guide-tabs">
+        <button id="tabAndroid" class="active" type="button">Android</button>
+        <button id="tabIphone" type="button">iPhone</button>
+      </div>
+
+      <div id="panelAndroid" class="guide-panel active">
+        <strong>En Android (Chrome):</strong>
+        <ol>
+          <li>Abre esta página en <strong>Google Chrome</strong>.</li>
+          <li>Pulsa el icono de los <strong>tres puntos (⋮)</strong> arriba a la derecha.</li>
+          <li>Selecciona <strong>Añadir a pantalla de inicio</strong> o <strong>Instalar aplicación</strong>.</li>
+          <li>Confirma pulsando <strong>Añadir</strong> o <strong>Instalar</strong> y aparecerá el icono en tu móvil.</li>
+        </ol>
+      </div>
+
+      <div id="panelIphone" class="guide-panel">
+        <strong>En iPhone (Safari):</strong>
+        <ol>
+          <li>Abre esta página en <strong>Safari</strong> (si la abriste desde WhatsApp, pulsa los tres puntos o el icono de Safari para abrirla en el navegador).</li>
+          <li>Pulsa el botón <strong>Compartir</strong> (cuadrado con flecha hacia arriba) en la barra inferior o superior.</li>
+          <li>Desplázate hacia abajo en el menú y pulsa <strong>Añadir a pantalla de inicio</strong>.</li>
+          <li>Pulsa <strong>Añadir</strong> arriba a la derecha para crear el acceso directo en tu pantalla.</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby_JVwOWvZzn5IleXlGRVnOvbPHQHEoGNYmzv9aahNxOAjpVX9XyrlfhGC0UvbhJpkM/exec';
+
+    const FAMILY_COLORS = {
+      'Victor': '#0284C7',
+      'Espe': '#E05A47',
+      'Felix': '#059669',
+      'Jose Manuel': '#D97706'
+    };
+
+    const FAMILY_LABELS = {
+      'Victor': 'Familia Victor',
+      'Espe': 'Familia Espe',
+      'Felix': 'Familia Felix',
+      'Jose Manuel': 'Familia Jose Manuel'
+    };
+
+    const WHATSAPP_TO_FAMILY = {
+      'Víctor': 'Victor',
+      'Intxi': 'Victor',
+      'Arturo Padre': 'Espe',
+      'Arturo': 'Espe',
+      'Espe': 'Espe',
+      'Estefania': 'Espe',
+      'Manolo': 'Espe',
+      'Felix': 'Felix',
+      'María Eugenia': 'Felix',
+      'Jose Manuel': 'Jose Manuel',
+      'Juan': 'Jose Manuel',
+      'Mario': 'Jose Manuel'
+    };
+
+    const LEGACY_MATCHERS = [
+      { family: 'Espe', keywords: ['espe', 'arturo', 'artuti', 'estefania', 'estefanía', 'manolo', 'familia hv'] },
+      { family: 'Victor', keywords: ['victor', 'víctor', 'intxi', 'andrés', 'andres', 'julia', 'ibai', 'barbacoa'] },
+      { family: 'Felix', keywords: ['felix', 'félix', 'maría', 'maria', 'eugenia', 'felixín', 'felixn'] },
+      { family: 'Jose Manuel', keywords: ['jose manuel', 'josé manuel', 'jose eclipse', 'juan', 'mario'] }
+    ];
+
+    let state = {
+      viewMode: 'month',
+      cursorDate: new Date(),
+      bookings: [],
+      bookingsCollapsed: false,
+      editingBookingIdx: null,
+      loading: false,
+      deferredInstallPrompt: null
+    };
+
+    const whoSelect = document.getElementById('whoSelect');
+    const checkInInput = document.getElementById('checkIn');
+    const checkOutInput = document.getElementById('checkOut');
+    const commentInput = document.getElementById('commentInput');
+    const charCounter = document.getElementById('charCounter');
+    const submitBtn = document.getElementById('submitBtn');
+    const formAlert = document.getElementById('formAlert');
+    const checkoutBox = document.getElementById('checkoutBox');
+    const calendarView = document.getElementById('calendarView');
+    const dayDetailBox = document.getElementById('dayDetailBox');
+    const monthSelect = document.getElementById('monthSelect');
+    const yearSelect = document.getElementById('yearSelect');
+    const toggleBookingsBtn = document.getElementById('toggleBookingsBtn');
+    const bookingsChevron = document.getElementById('bookingsChevron');
+    const bookingsCollapseBody = document.getElementById('bookingsCollapseBody');
+    const bookingsList = document.getElementById('bookingsList');
+    const familyStats = document.getElementById('familyStats');
+
+    const editModal = document.getElementById('editModal');
+    const editWhoSelect = document.getElementById('editWhoSelect');
+    const editCheckIn = document.getElementById('editCheckIn');
+    const editCheckOut = document.getElementById('editCheckOut');
+    const editCommentInput = document.getElementById('editCommentInput');
+    const editCancelledCheckbox = document.getElementById('editCancelledCheckbox');
+    const saveEditBtn = document.getElementById('saveEditBtn');
+
+    const installModal = document.getElementById('installModal');
+    const nativePromptArea = document.getElementById('nativePromptArea');
+    const tabAndroid = document.getElementById('tabAndroid');
+    const tabIphone = document.getElementById('tabIphone');
+    const panelAndroid = document.getElementById('panelAndroid');
+    const panelIphone = document.getElementById('panelIphone');
+
+    function initSelects() {
+      Object.keys(WHATSAPP_TO_FAMILY).forEach(name => {
+        const opt1 = document.createElement('option');
+        opt1.value = name;
+        opt1.textContent = name;
+        whoSelect.appendChild(opt1);
+
+        const opt2 = document.createElement('option');
+        opt2.value = name;
+        opt2.textContent = name;
+        editWhoSelect.appendChild(opt2);
+      });
+
+      const currentYear = new Date().getFullYear();
+      for (let y = currentYear - 2; y <= currentYear + 5; y++) {
+        const opt = document.createElement('option');
+        opt.value = String(y);
+        opt.textContent = String(y);
+        yearSelect.appendChild(opt);
+      }
+    }
+
+    function syncPeriodSelectors() {
+      const year = state.cursorDate.getFullYear();
+      const month = state.cursorDate.getMonth();
+
+      if (!Array.from(yearSelect.options).some(o => Number(o.value) === year)) {
+        const opt = document.createElement('option');
+        opt.value = String(year);
+        opt.textContent = String(year);
+        yearSelect.appendChild(opt);
+        const sorted = Array.from(yearSelect.options).sort((a, b) => Number(a.value) - Number(b.value));
+        yearSelect.innerHTML = '';
+        sorted.forEach(o => yearSelect.appendChild(o));
+      }
+
+      monthSelect.value = String(month);
+      yearSelect.value = String(year);
+      monthSelect.style.display = state.viewMode === 'month' ? '' : 'none';
+    }
+
+    function showAlert(type, message) {
+      formAlert.className = 'alert ' + type;
+      formAlert.textContent = message;
+    }
+
+    function clearAlert() {
+      formAlert.className = 'alert';
+      formAlert.textContent = '';
+    }
+
+    function parseYMD(str) {
+      const clean = (str || '').slice(0, 10);
+      const [y, m, d] = clean.split('-').map(Number);
+      return new Date(y, (m || 1) - 1, d || 1);
+    }
+
+    function toYMD(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function addDaysDate(date, days) {
+      return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
+    }
+
+    function isTodayYMD(ymd) {
+      return ymd === toYMD(new Date());
+    }
+
+    function normalizeText(text) {
+      return (text || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+    }
+
+    function resolveFamilyFromEvent(ev, whoLabel) {
+      const desc = ev.description || '';
+      const famMatch = desc.match(/^Familia:\s*(.+)/im);
+      if (famMatch) {
+        const famKey = famMatch[1].trim();
+        if (FAMILY_COLORS[famKey]) {
+          return { key: famKey, color: FAMILY_COLORS[famKey] };
+        }
+      }
+
+      const titleClean = (ev.title || '').replace(/^\[CANCELADO\]\s*/i, '').replace(/^Casa Alaejos:\s*/i, '').trim();
+      if (WHATSAPP_TO_FAMILY[titleClean]) {
+        const famKey = WHATSAPP_TO_FAMILY[titleClean];
+        return { key: famKey, color: FAMILY_COLORS[famKey] || '#64748B' };
+      }
+
+      const haystack = normalizeText(`${titleClean} ${whoLabel} ${desc}`);
+      for (const rule of LEGACY_MATCHERS) {
+        if (rule.keywords.some(kw => haystack.includes(normalizeText(kw)))) {
+          return { key: rule.family, color: FAMILY_COLORS[rule.family] || '#64748B' };
+        }
+      }
+
+      return { key: 'Sin asignar', color: '#64748B' };
+    }
+
+    function normalizeEvents(rawEvents) {
+      return (rawEvents || [])
+        .map((ev, idx) => {
+          const startDate = parseYMD(ev.start);
+          let endDateInclusive = parseYMD(ev.end);
+
+          if (ev.isAllDay && endDateInclusive > startDate) {
+            endDateInclusive = addDaysDate(endDateInclusive, -1);
+          }
+          if (endDateInclusive < startDate) {
+            endDateInclusive = new Date(startDate.getTime());
+          }
+
+          const rawTitle = ev.title || '';
+          const desc = ev.description || '';
+          const cancelled = Boolean(ev.cancelled) || /^\[CANCELADO\]/im.test(rawTitle.trim()) || /^Estado:\s*CANCELADO/im.test(desc);
+
+          const cleanTitle = rawTitle.replace(/^\[CANCELADO\]\s*/i, '').replace(/^Casa Alaejos:\s*/i, '').trim();
+          const whoMatch = desc.match(/^Reservado por:\s*(.+)/im);
+          const who = whoMatch ? whoMatch[1].trim() : (cleanTitle || 'Reserva');
+
+          const commentMatch = desc.match(/^Comentario:\s*(.+)/im);
+          const comment = commentMatch ? commentMatch[1].trim() : '';
+
+          const fam = resolveFamilyFromEvent(ev, who);
+
+          return {
+            _rawIndex: idx,
+            id: ev.id || '',
+            who,
+            comment,
+            cancelled,
+            family: fam.key,
+            color: fam.color,
+            startDate,
+            endDate: endDateInclusive,
+            startStr: toYMD(startDate),
+            endStr: toYMD(endDateInclusive)
+          };
+        })
+        .sort((a, b) => a.startDate - b.startDate)
+        .map((item, sortedIdx) => ({ ...item, _idx: sortedIdx }));
+    }
+
+    async function loadBookings() {
+      state.loading = true;
+      document.getElementById('btnReload').disabled = true;
+      try {
+        const res = await fetch(SCRIPT_URL, { cache: 'no-store' });
+        const json = await res.json();
+        if (!json.ok) {
+          throw new Error(json.error || 'Error al leer el calendario');
+        }
+        state.bookings = normalizeEvents(json.events);
+        renderAll();
+      } catch (err) {
+        showAlert('error', 'No se pudo cargar el calendario: ' + err.message);
+      } finally {
+        state.loading = false;
+        document.getElementById('btnReload').disabled = false;
+      }
+    }
+
+    function activeBookings(excludeIdx = null) {
+      return state.bookings.filter(b => !b.cancelled && b._idx !== excludeIdx);
+    }
+
+    function hasOverlap(startA, endA, excludeIdx = null) {
+      return activeBookings(excludeIdx).filter(b => startA <= b.endDate && endA >= b.startDate);
+    }
+
+    function staysOnDate(dateObj) {
+      const d = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
+      return activeBookings().filter(b => d >= b.startDate && d <= b.endDate);
+    }
+
+    function countDaysInYearForFamily(year, famKey) {
+      const yearStart = new Date(year, 0, 1);
+      const yearEnd = new Date(year, 11, 31);
+      const uniqueDays = new Set();
+      let staysCount = 0;
+
+      activeBookings().forEach(b => {
+        if (b.family !== famKey) return;
+        const ovStart = b.startDate > yearStart ? b.startDate : yearStart;
+        const ovEnd = b.endDate < yearEnd ? b.endDate : yearEnd;
+        if (ovStart <= ovEnd) {
+          staysCount += 1;
+          let cur = new Date(ovStart.getTime());
+          while (cur <= ovEnd) {
+            uniqueDays.add(toYMD(cur));
+            cur = addDaysDate(cur, 1);
+          }
+        }
+      });
+
+      return { days: uniqueDays.size, stays: staysCount };
+    }
+
+    function renderFamilyStats() {
+      const year = state.cursorDate.getFullYear();
+      familyStats.innerHTML = '';
+
+      Object.entries(FAMILY_LABELS).forEach(([key, label]) => {
+        const color = FAMILY_COLORS[key] || '#64748B';
+        const metrics = countDaysInYearForFamily(year, key);
+        const box = document.createElement('div');
+        box.className = 'stat-box';
+        box.style.borderLeftColor = color;
+        box.innerHTML = `
+          <div class="stat-name">${label} (${year})</div>
+          <div class="stat-detail">${metrics.days} días · ${metrics.stays} estancias</div>
+        `;
+        familyStats.appendChild(box);
+      });
+    }
+
+    function openEditModalByIdx(idx) {
+      const booking = state.bookings[idx];
+      if (!booking) return;
+      if (!booking.id) {
+        showAlert('error', 'Este evento no tiene identificador disponible para editar desde la web.');
+        return;
+      }
+      clearAlert();
+      state.editingBookingIdx = idx;
+
+      if (WHATSAPP_TO_FAMILY[booking.who]) {
+        editWhoSelect.value = booking.who;
+      } else {
+        editWhoSelect.value = 'Víctor';
+      }
+
+      editCheckIn.value = booking.startStr;
+      editCheckOut.value = booking.endStr;
+      editCommentInput.value = booking.comment || '';
+      editCancelledCheckbox.checked = Boolean(booking.cancelled);
+      editModal.classList.add('open');
+    }
+
+    function closeEditModal() {
+      state.editingBookingIdx = null;
+      editModal.classList.remove('open');
+    }
+
+    function handleDayClick(dateObj) {
+      clearAlert();
+      const clickedStr = toYMD(dateObj);
+      const dayStays = staysOnDate(dateObj);
+      const todayBadge = isTodayYMD(clickedStr) ? ' <span class="today-tag">Hoy</span>' : '';
+
+      if (!checkInInput.value || (checkInInput.value && checkOutInput.value)) {
+        checkInInput.value = clickedStr;
+        checkOutInput.value = clickedStr;
+      } else if (clickedStr >= checkInInput.value) {
+        checkOutInput.value = clickedStr;
+      } else {
+        checkInInput.value = clickedStr;
+      }
+
+      dayDetailBox.innerHTML = '';
+      const headerDiv = document.createElement('div');
+      headerDiv.innerHTML = `<strong>Día ${clickedStr}</strong>${todayBadge}`;
+      dayDetailBox.appendChild(headerDiv);
+
+      if (dayStays.length > 0) {
+        dayStays.forEach(st => {
+          const item = document.createElement('div');
+          item.className = 'day-stay-item';
+          const cmt = st.comment ? ` — <em>${st.comment}</em>` : '';
+          const left = document.createElement('div');
+          left.innerHTML = `<strong style="color:${st.color}">● ${st.who}</strong> (${st.startStr} → ${st.endStr})${cmt}`;
+          item.appendChild(left);
+
+          if (st.id) {
+            const btnEdit = document.createElement('button');
+            btnEdit.type = 'button';
+            btnEdit.textContent = 'Editar';
+            btnEdit.addEventListener('click', (ev) => {
+              ev.stopPropagation();
+              openEditModalByIdx(st._idx);
+            });
+            item.appendChild(btnEdit);
+          }
+
+          dayDetailBox.appendChild(item);
+        });
+      } else {
+        const freeDiv = document.createElement('div');
+        freeDiv.style.marginTop = '0.3rem';
+        freeDiv.innerHTML = `Libre. Seleccionado en el formulario (entrada: <strong>${checkInInput.value}</strong>, salida: <strong>${checkOutInput.value}</strong>).`;
+        dayDetailBox.appendChild(freeDiv);
+      }
+
+      dayDetailBox.classList.add('visible');
+    }
+
+    function attachCalendarHandlers() {
+      calendarView.querySelectorAll('[data-month-jump]').forEach(el => {
+        el.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          const [yStr, mStr] = el.getAttribute('data-month-jump').split('-');
+          state.cursorDate = new Date(Number(yStr), Number(mStr), 1);
+          state.viewMode = 'month';
+          document.getElementById('viewMonthBtn').classList.add('active');
+          document.getElementById('viewYearBtn').classList.remove('active');
+          renderAll();
+        });
+      });
+
+      calendarView.querySelectorAll('[data-booking-idx]').forEach(el => {
+        el.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          const idx = Number(el.getAttribute('data-booking-idx'));
+          if (!Number.isNaN(idx)) {
+            openEditModalByIdx(idx);
+          }
+        });
+      });
+
+      calendarView.querySelectorAll('[data-date]').forEach(el => {
+        el.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          const ymd = el.getAttribute('data-date');
+          if (ymd) {
+            handleDayClick(parseYMD(ymd));
+          }
+        });
+      });
+    }
+
+    function renderMonthView() {
+      const year = state.cursorDate.getFullYear();
+      const month = state.cursorDate.getMonth();
+
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      const startOffset = (firstDay.getDay() + 6) % 7;
+
+      const dows = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+      let html = '<div class="month-grid">';
+      dows.forEach(d => {
+        html += `<div class="dow">${d}</div>`;
+      });
+
+      for (let i = 0; i < startOffset; i++) {
+        html += '<div class="day-cell empty"></div>';
+      }
+
+      for (let day = 1; day <= lastDay.getDate(); day++) {
+        const current = new Date(year, month, day);
+        const ymd = toYMD(current);
+        const isToday = isTodayYMD(ymd);
+        const activeStays = staysOnDate(current);
+        const todayClass = isToday ? ' today' : '';
+        const todayBadge = isToday ? '<span class="today-tag">Hoy</span>' : '';
+
+        html += `<div class="day-cell${todayClass}" data-date="${ymd}"><span class="day-num">${day}${todayBadge}</span>`;
+        activeStays.forEach(st => {
+          const tip = st.comment ? `${st.who} (${st.startStr} a ${st.endStr}) - ${st.comment}` : `${st.who} (${st.startStr} a ${st.endStr})`;
+          const idxAttr = st.id ? ` data-booking-idx="${st._idx}"` : '';
+          html += `<span class="stay-pill" style="background:${st.color}"${idxAttr} title="${tip}">${st.who}</span>`;
+        });
+        html += '</div>';
+      }
+
+      html += '</div>';
+      calendarView.innerHTML = html;
+      attachCalendarHandlers();
+    }
+
+    function renderYearView() {
+      const year = state.cursorDate.getFullYear();
+
+      let html = '<div class="year-grid">';
+      for (let m = 0; m < 12; m++) {
+        const monthDate = new Date(year, m, 1);
+        const monthName = monthDate.toLocaleDateString('es-ES', { month: 'long' });
+        const lastDay = new Date(year, m + 1, 0).getDate();
+        const offset = (monthDate.getDay() + 6) % 7;
+
+        html += `<div class="mini-month"><h3 data-month-jump="${year}-${m}" title="Abrir ${monthName} ${year} en vista mensual">${monthName} ${year}</h3><div class="mini-days">`;
+        ['L', 'M', 'X', 'J', 'V', 'S', 'D'].forEach(l => {
+          html += `<div style="font-weight:700;color:#64748b">${l}</div>`;
+        });
+
+        for (let i = 0; i < offset; i++) {
+          html += '<div></div>';
+        }
+
+        for (let d = 1; d <= lastDay; d++) {
+          const dayObj = new Date(year, m, d);
+          const ymd = toYMD(dayObj);
+          const isToday = isTodayYMD(ymd);
+          const todayClass = isToday ? ' today' : '';
+          const dayStays = staysOnDate(dayObj);
+
+          if (dayStays.length > 0) {
+            const topStay = dayStays[dayStays.length - 1];
+            const title = dayStays.map(s => `${s.who} (${s.startStr} a ${s.endStr})`).join(' | ');
+            const idxAttr = topStay.id ? ` data-booking-idx="${topStay._idx}"` : '';
+            html += `<div class="mini-day${todayClass}" data-date="${ymd}"${idxAttr} style="background:${topStay.color};color:#fff;font-weight:700" title="${title}">${d}</div>`;
+          } else {
+            html += `<div class="mini-day${todayClass}" data-date="${ymd}" title="${ymd} (libre)">${d}</div>`;
+          }
+        }
+
+        html += '</div></div>';
+      }
+      html += '</div>';
+      calendarView.innerHTML = html;
+      attachCalendarHandlers();
+    }
+
+    async function cancelBookingByIdx(idx) {
+      const booking = state.bookings[idx];
+      if (!booking || !booking.id) {
+        showAlert('error', 'Este evento no tiene identificador disponible para cancelar desde la web.');
+        return;
+      }
+
+      const confirmed = window.confirm(
+        `¿Marcar como CANCELADA la reserva de ${booking.who} (${booking.startStr} → ${booking.endStr})?\n\nNo se borrará del calendario de Google, pero quedará marcada como [CANCELADO] y liberará los días.`
+      );
+      if (!confirmed) return;
+
+      clearAlert();
+      try {
+        await fetch(SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'cancel',
+            id: booking.id
+          })
+        });
+
+        showAlert('ok', `Reserva de ${booking.who} (${booking.startStr} → ${booking.endStr}) marcada como cancelada. Actualizando...`);
+        setTimeout(() => {
+          loadBookings();
+        }, 1200);
+      } catch (err) {
+        showAlert('error', 'No se pudo cancelar la reserva: ' + err.message);
+      }
+    }
+
+    function renderBookingsList() {
+      if (state.bookings.length === 0) {
+        bookingsList.innerHTML = '<div style="color:#64748b;font-size:0.9rem">No hay estancias registradas en el rango consultado.</div>';
+        return;
+      }
+
+      bookingsList.innerHTML = '';
+      state.bookings.forEach(b => {
+        const row = document.createElement('div');
+        row.className = 'booking-row' + (b.cancelled ? ' cancelled' : '') + (b.id ? ' editable' : '');
+        row.style.borderLeftColor = b.color;
+
+        if (b.id) {
+          row.addEventListener('click', () => openEditModalByIdx(b._idx));
+        }
+
+        const info = document.createElement('div');
+        info.className = 'booking-info';
+        info.innerHTML = `
+          <div class="booking-title">
+            <strong>${b.who}</strong> · ${b.startStr} → ${b.endStr}
+            ${b.cancelled ? ' <span class="badge-cancelled">CANCELADA</span>' : ''}
+          </div>
+          ${b.comment ? `<div class="booking-comment">“${b.comment}”</div>` : ''}
+        `;
+        row.appendChild(info);
+
+        if (b.id) {
+          const actions = document.createElement('div');
+          actions.className = 'booking-actions';
+
+          const btnEdit = document.createElement('button');
+          btnEdit.type = 'button';
+          btnEdit.textContent = 'Editar';
+          btnEdit.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            openEditModalByIdx(b._idx);
+          });
+          actions.appendChild(btnEdit);
+
+          if (!b.cancelled) {
+            const btnCancel = document.createElement('button');
+            btnCancel.type = 'button';
+            btnCancel.className = 'danger-outline';
+            btnCancel.textContent = 'Cancelar';
+            btnCancel.addEventListener('click', (ev) => {
+              ev.stopPropagation();
+              cancelBookingByIdx(b._idx);
+            });
+            actions.appendChild(btnCancel);
+          }
+
+          row.appendChild(actions);
+        }
+
+        bookingsList.appendChild(row);
+      });
+    }
+
+    function applyCollapseState() {
+      bookingsCollapseBody.classList.toggle('collapsed', state.bookingsCollapsed);
+      bookingsChevron.classList.toggle('collapsed', state.bookingsCollapsed);
+      toggleBookingsBtn.setAttribute('aria-expanded', String(!state.bookingsCollapsed));
+    }
+
+    toggleBookingsBtn.addEventListener('click', () => {
+      state.bookingsCollapsed = !state.bookingsCollapsed;
+      applyCollapseState();
     });
 
-    return jsonResponse({ ok: true, events: items });
-  } catch (err) {
-    return jsonResponse({ ok: false, error: err.message });
-  }
-}
-
-function doPost(e) {
-  try {
-    const cal = CalendarApp.getCalendarById(CALENDAR_ID);
-    if (!cal) {
-      return jsonResponse({ ok: false, error: 'Calendario no encontrado' });
+    function renderAll() {
+      syncPeriodSelectors();
+      if (state.viewMode === 'month') {
+        renderMonthView();
+      } else {
+        renderYearView();
+      }
+      renderBookingsList();
+      renderFamilyStats();
+      applyCollapseState();
     }
 
-    const raw = e.postData && e.postData.contents ? e.postData.contents : '{}';
-    const data = JSON.parse(raw);
+    document.getElementById('btnCloseEditModal').addEventListener('click', closeEditModal);
+    document.getElementById('btnCancelEditModal').addEventListener('click', closeEditModal);
+    editModal.addEventListener('click', (e) => {
+      if (e.target === editModal) closeEditModal();
+    });
 
-    if (data.action === 'cancel') {
-      const eventId = (data.id || '').trim();
-      if (!eventId) {
-        return jsonResponse({ ok: false, error: 'Falta el ID del evento a cancelar' });
-      }
+    document.getElementById('editBookingForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (state.editingBookingIdx === null) return;
+      const targetBooking = state.bookings[state.editingBookingIdx];
+      if (!targetBooking || !targetBooking.id) return;
 
-      const ev = cal.getEventById(eventId);
-      if (!ev) {
-        return jsonResponse({ ok: false, error: 'Evento no encontrado en el calendario' });
-      }
-
-      const currentTitle = ev.getTitle() || '';
-      if (!/^\[CANCELADO\]/i.test(currentTitle.trim())) {
-        ev.setTitle(`[CANCELADO] ${currentTitle}`);
-      }
-
-      const currentDesc = ev.getDescription() || '';
-      if (!/^Estado:\s*CANCELADO/im.test(currentDesc)) {
-        const stamp = Utilities.formatDate(new Date(), TIMEZONE, 'yyyy-MM-dd HH:mm');
-        const nextDesc = currentDesc
-          ? `${currentDesc}\nEstado: CANCELADO (${stamp})`
-          : `Estado: CANCELADO (${stamp})`;
-        ev.setDescription(nextDesc);
-      }
-
-      return jsonResponse({ ok: true, id: eventId, cancelled: true });
-    }
-
-    if (data.action === 'update') {
-      const eventId = (data.id || '').trim();
-      if (!eventId) {
-        return jsonResponse({ ok: false, error: 'Falta el ID del evento a editar' });
-      }
-
-      const ev = cal.getEventById(eventId);
-      if (!ev) {
-        return jsonResponse({ ok: false, error: 'Evento no encontrado en el calendario' });
-      }
-
-      const who = (data.who || '').trim();
-      const family = (data.family || '').trim();
-      const color = (data.color || '').trim();
-      const comment = (data.comment || '').trim();
-      const checkInStr = (data.checkIn || '').trim();
-      const checkOutStr = (data.checkOut || '').trim();
-      const isCancelled = Boolean(data.cancelled);
+      const who = editWhoSelect.value;
+      const checkInStr = editCheckIn.value;
+      const checkOutStr = editCheckOut.value;
+      const comment = editCommentInput.value.trim().slice(0, 280);
+      const cancelled = editCancelledCheckbox.checked;
 
       if (!who || !checkInStr || !checkOutStr) {
-        return jsonResponse({ ok: false, error: 'Faltan datos obligatorios para actualizar' });
+        alert('Completa quién va, la fecha de entrada y la fecha de salida.');
+        return;
       }
 
-      const startDay = parseLocalDate(checkInStr);
-      const endDayExclusive = addDays(parseLocalDate(checkOutStr), 1);
+      const startDate = parseYMD(checkInStr);
+      const endDate = parseYMD(checkOutStr);
 
-      if (endDayExclusive <= startDay) {
-        return jsonResponse({ ok: false, error: 'La fecha de salida debe ser igual o posterior a la de entrada' });
+      if (endDate < startDate) {
+        alert('La fecha de salida no puede ser anterior a la fecha de entrada.');
+        return;
       }
 
-      const baseTitle = `Casa Alaejos: ${who}`;
-      const nextTitle = isCancelled ? `[CANCELADO] ${baseTitle}` : baseTitle;
-
-      const descLines = [
-        `Reservado por: ${who}`,
-        `Familia: ${family}`,
-        `Color: ${color}`,
-        `Entrada: ${checkInStr}`,
-        `Salida: ${checkOutStr}`
-      ];
-      if (comment) {
-        descLines.push(`Comentario: ${comment}`);
-      }
-      if (isCancelled) {
-        const stamp = Utilities.formatDate(new Date(), TIMEZONE, 'yyyy-MM-dd HH:mm');
-        descLines.push(`Estado: CANCELADO (${stamp})`);
+      if (!cancelled) {
+        const conflicts = hasOverlap(startDate, endDate, targetBooking._idx);
+        if (conflicts.length > 0) {
+          const names = conflicts.map(c => `${c.who} (${c.startStr} a ${c.endStr})`).join(', ');
+          alert(`Aviso de solapamiento: ya hay reserva en esas fechas (${names}).`);
+          return;
+        }
       }
 
-      ev.setTitle(nextTitle);
-      ev.setAllDayDates(startDay, endDayExclusive);
-      ev.setDescription(descLines.join('\n'));
+      const familyKey = WHATSAPP_TO_FAMILY[who] || 'Victor';
+      const colorHex = FAMILY_COLORS[familyKey] || '#0284C7';
+      const targetId = targetBooking.id;
 
-      return jsonResponse({ ok: true, id: eventId, updated: true });
-    }
+      saveEditBtn.disabled = true;
+      try {
+        await fetch(SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'update',
+            id: targetId,
+            who,
+            family: familyKey,
+            color: colorHex,
+            comment,
+            checkIn: checkInStr,
+            checkOut: checkOutStr,
+            cancelled
+          })
+        });
 
-    const who = (data.who || '').trim();
-    const family = (data.family || '').trim();
-    const color = (data.color || '').trim();
-    const comment = (data.comment || '').trim();
-    const checkInStr = (data.checkIn || '').trim();
-    const checkOutStr = (data.checkOut || '').trim();
-
-    if (!who || !checkInStr || !checkOutStr) {
-      return jsonResponse({ ok: false, error: 'Faltan datos obligatorios (quién va, entrada o salida)' });
-    }
-
-    const startDay = parseLocalDate(checkInStr);
-    const endDayExclusive = addDays(parseLocalDate(checkOutStr), 1);
-
-    if (endDayExclusive <= startDay) {
-      return jsonResponse({ ok: false, error: 'La fecha de salida debe ser igual o posterior a la de entrada' });
-    }
-
-    const title = `Casa Alaejos: ${who}`;
-    const descLines = [
-      `Reservado por: ${who}`,
-      `Familia: ${family}`,
-      `Color: ${color}`,
-      `Entrada: ${checkInStr}`,
-      `Salida: ${checkOutStr}`
-    ];
-    if (comment) {
-      descLines.push(`Comentario: ${comment}`);
-    }
-
-    const created = cal.createAllDayEvent(title, startDay, endDayExclusive, {
-      description: descLines.join('\n')
+        closeEditModal();
+        showAlert('ok', `Reserva de ${who} actualizada (${checkInStr} → ${checkOutStr}). Actualizando calendario...`);
+        setTimeout(() => {
+          loadBookings();
+        }, 1200);
+      } catch (err) {
+        alert('Error al guardar cambios: ' + err.message);
+      } finally {
+        saveEditBtn.disabled = false;
+      }
     });
 
-    return jsonResponse({
-      ok: true,
-      id: created.getId(),
-      title: title,
-      start: checkInStr,
-      end: checkOutStr
+    function selectPlatformTab(platform) {
+      const isIphone = platform === 'iphone';
+      tabIphone.classList.toggle('active', isIphone);
+      tabAndroid.classList.toggle('active', !isIphone);
+      panelIphone.classList.toggle('active', isIphone);
+      panelAndroid.classList.toggle('active', !isIphone);
+    }
+
+    function openInstallModal() {
+      const ua = navigator.userAgent || '';
+      const isIos = /iPhone|iPad|iPod/i.test(ua);
+      selectPlatformTab(isIos ? 'iphone' : 'android');
+      nativePromptArea.style.display = state.deferredInstallPrompt ? 'block' : 'none';
+      installModal.classList.add('open');
+    }
+
+    function closeInstallModal() {
+      installModal.classList.remove('open');
+    }
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      state.deferredInstallPrompt = e;
+      if (installModal.classList.contains('open')) {
+        nativePromptArea.style.display = 'block';
+      }
     });
-  } catch (err) {
-    return jsonResponse({ ok: false, error: err.message });
-  }
-}
 
-function parseLocalDate(yyyyMmDd) {
-  const parts = yyyyMmDd.split('-').map(Number);
-  return new Date(parts[0], parts[1] - 1, parts[2], 0, 0, 0);
-}
+    commentInput.addEventListener('input', () => {
+      charCounter.textContent = `${commentInput.value.length} / 280`;
+    });
 
-function addDays(dateObj, days) {
-  return new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate() + days, 0, 0, 0);
-}
+    document.getElementById('btnCloseCheckout').addEventListener('click', () => {
+      checkoutBox.classList.remove('visible');
+    });
 
-function formatDateISO(dateObj, isAllDay) {
-  if (isAllDay) {
-    return Utilities.formatDate(dateObj, TIMEZONE, 'yyyy-MM-dd');
-  }
-  return Utilities.formatDate(dateObj, TIMEZONE, "yyyy-MM-dd'T'HH:mm:ssXXX");
-}
+    document.getElementById('btnInstallGuide').addEventListener('click', openInstallModal);
+    document.getElementById('btnCloseModal').addEventListener('click', closeInstallModal);
+    installModal.addEventListener('click', (e) => {
+      if (e.target === installModal) closeInstallModal();
+    });
+    tabAndroid.addEventListener('click', () => selectPlatformTab('android'));
+    tabIphone.addEventListener('click', () => selectPlatformTab('iphone'));
 
-function jsonResponse(obj) {
-  return ContentService
-    .createTextOutput(JSON.stringify(obj))
-    .setMimeType(ContentService.MimeType.JSON);
-}
+    document.getElementById('btnNativeInstall').addEventListener('click', async () => {
+      if (!state.deferredInstallPrompt) return;
+      state.deferredInstallPrompt.prompt();
+      await state.deferredInstallPrompt.userChoice;
+      state.deferredInstallPrompt = null;
+      nativePromptArea.style.display = 'none';
+    });
+
+    document.getElementById('bookingForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearAlert();
+
+      const who = whoSelect.value;
+      const checkInStr = checkInInput.value;
+      const checkOutStr = checkOutInput.value;
+      const comment = commentInput.value.trim().slice(0, 280);
+
+      if (!who || !checkInStr || !checkOutStr) {
+        showAlert('error', 'Completa quién va, la fecha de entrada y la fecha de salida.');
+        return;
+      }
+
+      const startDate = parseYMD(checkInStr);
+      const endDate = parseYMD(checkOutStr);
+
+      if (endDate < startDate) {
+        showAlert('error', 'La fecha de salida no puede ser anterior a la fecha de entrada.');
+        return;
+      }
+
+      const conflicts = hasOverlap(startDate, endDate);
+      if (conflicts.length > 0) {
+        const names = conflicts.map(c => `${c.who} (${c.startStr} a ${c.endStr})`).join(', ');
+        showAlert('error', `Aviso de solapamiento: ya hay reserva en esas fechas (${names}).`);
+        return;
+      }
+
+      const familyKey = WHATSAPP_TO_FAMILY[who] || 'Victor';
+      const colorHex = FAMILY_COLORS[familyKey] || '#0284C7';
+
+      submitBtn.disabled = true;
+      try {
+        await fetch(SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'create',
+            who,
+            family: familyKey,
+            color: colorHex,
+            comment,
+            checkIn: checkInStr,
+            checkOut: checkOutStr
+          })
+        });
+
+        showAlert('ok', `Reserva enviada para ${who} (${checkInStr} a ${checkOutStr}). Revisa el checklist de salida abajo.`);
+        checkoutBox.classList.add('visible');
+        checkInInput.value = '';
+        checkOutInput.value = '';
+        commentInput.value = '';
+        charCounter.textContent = '0 / 280';
+
+        setTimeout(() => {
+          loadBookings();
+        }, 1200);
+      } catch (err) {
+        showAlert('error', 'Error al guardar la reserva: ' + err.message);
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+
+    monthSelect.addEventListener('change', () => {
+      const targetYear = Number(yearSelect.value);
+      const targetMonth = Number(monthSelect.value);
+      state.cursorDate = new Date(targetYear, targetMonth, 1);
+      renderAll();
+    });
+
+    yearSelect.addEventListener('change', () => {
+      const targetYear = Number(yearSelect.value);
+      const targetMonth = state.viewMode === 'month' ? Number(monthSelect.value) : 0;
+      state.cursorDate = new Date(targetYear, targetMonth, 1);
+      renderAll();
+    });
+
+    document.getElementById('viewMonthBtn').addEventListener('click', () => {
+      state.viewMode = 'month';
+      document.getElementById('viewMonthBtn').classList.add('active');
+      document.getElementById('viewYearBtn').classList.remove('active');
+      renderAll();
+    });
+
+    document.getElementById('viewYearBtn').addEventListener('click', () => {
+      state.viewMode = 'year';
+      document.getElementById('viewYearBtn').classList.add('active');
+      document.getElementById('viewMonthBtn').classList.remove('active');
+      renderAll();
+    });
+
+    document.getElementById('prevBtn').addEventListener('click', () => {
+      if (state.viewMode === 'month') {
+        state.cursorDate = new Date(state.cursorDate.getFullYear(), state.cursorDate.getMonth() - 1, 1);
+      } else {
+        state.cursorDate = new Date(state.cursorDate.getFullYear() - 1, 0, 1);
+      }
+      renderAll();
+    });
+
+    document.getElementById('nextBtn').addEventListener('click', () => {
+      if (state.viewMode === 'month') {
+        state.cursorDate = new Date(state.cursorDate.getFullYear(), state.cursorDate.getMonth() + 1, 1);
+      } else {
+        state.cursorDate = new Date(state.cursorDate.getFullYear() + 1, 0, 1);
+      }
+      renderAll();
+    });
+
+    document.getElementById('todayBtn').addEventListener('click', () => {
+      state.cursorDate = new Date();
+      renderAll();
+    });
+
+    document.getElementById('btnReload').addEventListener('click', () => {
+      clearAlert();
+      loadBookings();
+    });
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      });
+    }
+
+    initSelects();
+    renderAll();
+    loadBookings();
+  </script>
+</body>
+</html>
