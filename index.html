@@ -133,13 +133,27 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 0.5rem;
       width: 100%;
-      background: transparent;
-      border: none;
-      padding: 0;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.6rem 0.75rem;
       margin: 0;
       text-align: left;
       color: var(--text);
+    }
+
+    .collapse-toggle:hover {
+      background: #f1f5f9;
+    }
+
+    .collapse-heading {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.45rem;
+      min-width: 0;
     }
 
     .collapse-toggle h2 {
@@ -147,13 +161,20 @@
       font-size: 1rem;
     }
 
+    .collapse-status {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
     .chevron {
       display: inline-block;
       font-size: 1.15rem;
       line-height: 1;
-      color: var(--muted);
+      color: var(--text);
       transition: transform 0.18s ease;
       transform: rotate(90deg);
+      flex-shrink: 0;
     }
 
     .chevron.collapsed {
@@ -161,7 +182,7 @@
     }
 
     .collapsible-body {
-      margin-top: 0.7rem;
+      margin-top: 0.75rem;
     }
 
     .collapsible-body.collapsed {
@@ -816,11 +837,14 @@
     </section>
 
     <section class="card">
-      <button id="toggleBookingsBtn" class="collapse-toggle" type="button" aria-expanded="true" aria-controls="bookingsCollapseBody">
-        <h2>Estancias registradas</h2>
-        <span id="bookingsChevron" class="chevron">›</span>
+      <button id="toggleBookingsBtn" class="collapse-toggle" type="button" aria-expanded="false" aria-controls="bookingsCollapseBody">
+        <span class="collapse-heading">
+          <h2>Estancias registradas</h2>
+          <span id="bookingsStatusLabel" class="collapse-status">(colapsado · pulsa para desplegar)</span>
+        </span>
+        <span id="bookingsChevron" class="chevron collapsed">›</span>
       </button>
-      <div id="bookingsCollapseBody" class="collapsible-body">
+      <div id="bookingsCollapseBody" class="collapsible-body collapsed">
         <div id="bookingsList" class="bookings-list"></div>
       </div>
     </section>
@@ -953,7 +977,7 @@
       viewMode: 'month',
       cursorDate: new Date(),
       bookings: [],
-      bookingsCollapsed: false,
+      bookingsCollapsed: true,
       editingBookingIdx: null,
       loading: false,
       deferredInstallPrompt: null
@@ -972,6 +996,7 @@
     const monthSelect = document.getElementById('monthSelect');
     const yearSelect = document.getElementById('yearSelect');
     const toggleBookingsBtn = document.getElementById('toggleBookingsBtn');
+    const bookingsStatusLabel = document.getElementById('bookingsStatusLabel');
     const bookingsChevron = document.getElementById('bookingsChevron');
     const bookingsCollapseBody = document.getElementById('bookingsCollapseBody');
     const bookingsList = document.getElementById('bookingsList');
@@ -1054,6 +1079,13 @@
       const m = String(date.getMonth() + 1).padStart(2, '0');
       const d = String(date.getDate()).padStart(2, '0');
       return `${y}-${m}-${d}`;
+    }
+
+    function formatDateES(ymdStr) {
+      const clean = (ymdStr || '').slice(0, 10);
+      const parts = clean.split('-');
+      if (parts.length !== 3) return ymdStr;
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
     }
 
     function addDaysDate(date, days) {
@@ -1245,6 +1277,7 @@
     function handleDayClick(dateObj) {
       clearAlert();
       const clickedStr = toYMD(dateObj);
+      const clickedES = formatDateES(clickedStr);
       const dayStays = staysOnDate(dateObj);
       const todayBadge = isTodayYMD(clickedStr) ? ' <span class="today-tag">Hoy</span>' : '';
 
@@ -1259,7 +1292,7 @@
 
       dayDetailBox.innerHTML = '';
       const headerDiv = document.createElement('div');
-      headerDiv.innerHTML = `<strong>Día ${clickedStr}</strong>${todayBadge}`;
+      headerDiv.innerHTML = `<strong>Día ${clickedES}</strong>${todayBadge}`;
       dayDetailBox.appendChild(headerDiv);
 
       if (dayStays.length > 0) {
@@ -1268,7 +1301,7 @@
           item.className = 'day-stay-item';
           const cmt = st.comment ? ` — <em>${st.comment}</em>` : '';
           const left = document.createElement('div');
-          left.innerHTML = `<strong style="color:${st.color}">● ${st.who}</strong> (${st.startStr} → ${st.endStr})${cmt}`;
+          left.innerHTML = `<strong style="color:${st.color}">● ${st.who}</strong> (${formatDateES(st.startStr)} → ${formatDateES(st.endStr)})${cmt}`;
           item.appendChild(left);
 
           if (st.id) {
@@ -1287,7 +1320,7 @@
       } else {
         const freeDiv = document.createElement('div');
         freeDiv.style.marginTop = '0.3rem';
-        freeDiv.innerHTML = `Libre. Seleccionado en el formulario (entrada: <strong>${checkInInput.value}</strong>, salida: <strong>${checkOutInput.value}</strong>).`;
+        freeDiv.innerHTML = `Libre. Seleccionado en el formulario (entrada: <strong>${formatDateES(checkInInput.value)}</strong>, salida: <strong>${formatDateES(checkOutInput.value)}</strong>).`;
         dayDetailBox.appendChild(freeDiv);
       }
 
@@ -1356,7 +1389,8 @@
 
         html += `<div class="day-cell${todayClass}" data-date="${ymd}"><span class="day-num">${day}${todayBadge}</span>`;
         activeStays.forEach(st => {
-          const tip = st.comment ? `${st.who} (${st.startStr} a ${st.endStr}) - ${st.comment}` : `${st.who} (${st.startStr} a ${st.endStr})`;
+          const rangeES = `${formatDateES(st.startStr)} a ${formatDateES(st.endStr)}`;
+          const tip = st.comment ? `${st.who} (${rangeES}) - ${st.comment}` : `${st.who} (${rangeES})`;
           const idxAttr = st.id ? ` data-booking-idx="${st._idx}"` : '';
           html += `<span class="stay-pill" style="background:${st.color}"${idxAttr} title="${tip}">${st.who}</span>`;
         });
@@ -1390,17 +1424,18 @@
         for (let d = 1; d <= lastDay; d++) {
           const dayObj = new Date(year, m, d);
           const ymd = toYMD(dayObj);
+          const dES = formatDateES(ymd);
           const isToday = isTodayYMD(ymd);
           const todayClass = isToday ? ' today' : '';
           const dayStays = staysOnDate(dayObj);
 
           if (dayStays.length > 0) {
             const topStay = dayStays[dayStays.length - 1];
-            const title = dayStays.map(s => `${s.who} (${s.startStr} a ${s.endStr})`).join(' | ');
+            const title = dayStays.map(s => `${s.who} (${formatDateES(s.startStr)} a ${formatDateES(s.endStr)})`).join(' | ');
             const idxAttr = topStay.id ? ` data-booking-idx="${topStay._idx}"` : '';
             html += `<div class="mini-day${todayClass}" data-date="${ymd}"${idxAttr} style="background:${topStay.color};color:#fff;font-weight:700" title="${title}">${d}</div>`;
           } else {
-            html += `<div class="mini-day${todayClass}" data-date="${ymd}" title="${ymd} (libre)">${d}</div>`;
+            html += `<div class="mini-day${todayClass}" data-date="${ymd}" title="${dES} (libre)">${d}</div>`;
           }
         }
 
@@ -1418,8 +1453,11 @@
         return;
       }
 
+      const startES = formatDateES(booking.startStr);
+      const endES = formatDateES(booking.endStr);
+
       const confirmed = window.confirm(
-        `¿Marcar como CANCELADA la reserva de ${booking.who} (${booking.startStr} → ${booking.endStr})?\n\nNo se borrará del calendario de Google, pero quedará marcada como [CANCELADO] y liberará los días.`
+        `¿Marcar como CANCELADA la reserva de ${booking.who} (${startES} → ${endES})?\n\nNo se borrará del calendario de Google, pero quedará marcada como [CANCELADO] y liberará los días.`
       );
       if (!confirmed) return;
 
@@ -1435,7 +1473,7 @@
           })
         });
 
-        showAlert('ok', `Reserva de ${booking.who} (${booking.startStr} → ${booking.endStr}) marcada como cancelada. Actualizando...`);
+        showAlert('ok', `Reserva de ${booking.who} (${startES} → ${endES}) marcada como cancelada. Actualizando...`);
         setTimeout(() => {
           loadBookings();
         }, 1200);
@@ -1464,7 +1502,7 @@
         info.className = 'booking-info';
         info.innerHTML = `
           <div class="booking-title">
-            <strong>${b.who}</strong> · ${b.startStr} → ${b.endStr}
+            <strong>${b.who}</strong> · ${formatDateES(b.startStr)} → ${formatDateES(b.endStr)}
             ${b.cancelled ? ' <span class="badge-cancelled">CANCELADA</span>' : ''}
           </div>
           ${b.comment ? `<div class="booking-comment">“${b.comment}”</div>` : ''}
@@ -1504,9 +1542,13 @@
     }
 
     function applyCollapseState() {
+      const countText = state.bookings.length > 0 ? ` (${state.bookings.length})` : '';
       bookingsCollapseBody.classList.toggle('collapsed', state.bookingsCollapsed);
       bookingsChevron.classList.toggle('collapsed', state.bookingsCollapsed);
       toggleBookingsBtn.setAttribute('aria-expanded', String(!state.bookingsCollapsed));
+      bookingsStatusLabel.textContent = state.bookingsCollapsed
+        ? `· colapsado${countText} (pulsa para desplegar)`
+        : `· desplegado${countText} (pulsa para colapsar)`;
     }
 
     toggleBookingsBtn.addEventListener('click', () => {
@@ -1560,7 +1602,7 @@
       if (!cancelled) {
         const conflicts = hasOverlap(startDate, endDate, targetBooking._idx);
         if (conflicts.length > 0) {
-          const names = conflicts.map(c => `${c.who} (${c.startStr} a ${c.endStr})`).join(', ');
+          const names = conflicts.map(c => `${c.who} (${formatDateES(c.startStr)} a ${formatDateES(c.endStr)})`).join(', ');
           alert(`Aviso de solapamiento: ya hay reserva en esas fechas (${names}).`);
           return;
         }
@@ -1590,7 +1632,7 @@
         });
 
         closeEditModal();
-        showAlert('ok', `Reserva de ${who} actualizada (${checkInStr} → ${checkOutStr}). Actualizando calendario...`);
+        showAlert('ok', `Reserva de ${who} actualizada (${formatDateES(checkInStr)} → ${formatDateES(checkOutStr)}). Actualizando calendario...`);
         setTimeout(() => {
           loadBookings();
         }, 1200);
@@ -1677,7 +1719,7 @@
 
       const conflicts = hasOverlap(startDate, endDate);
       if (conflicts.length > 0) {
-        const names = conflicts.map(c => `${c.who} (${c.startStr} a ${c.endStr})`).join(', ');
+        const names = conflicts.map(c => `${c.who} (${formatDateES(c.startStr)} a ${formatDateES(c.endStr)})`).join(', ');
         showAlert('error', `Aviso de solapamiento: ya hay reserva en esas fechas (${names}).`);
         return;
       }
@@ -1702,7 +1744,7 @@
           })
         });
 
-        showAlert('ok', `Reserva enviada para ${who} (${checkInStr} a ${checkOutStr}). Revisa el checklist de salida abajo.`);
+        showAlert('ok', `Reserva enviada para ${who} (${formatDateES(checkInStr)} a ${formatDateES(checkOutStr)}). Revisa el checklist de salida abajo.`);
         checkoutBox.classList.add('visible');
         checkInInput.value = '';
         checkOutInput.value = '';
