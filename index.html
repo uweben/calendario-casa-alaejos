@@ -755,8 +755,8 @@
 
         <div class="full-row">
           <label>
-            Título del evento (se guardará como «Nombre- Título»)
-            <input id="eventTitleInput" type="text" maxlength="100" placeholder="Ej.: Puente de diciembre, Fin de semana..." />
+            Título del evento (se guardará en el calendario como «Quien- Título»)
+            <input id="eventTitleInput" type="text" maxlength="100" placeholder="Ej.: puente, vacaciones, fin de semana..." />
           </label>
         </div>
 
@@ -876,7 +876,7 @@
         </label>
 
         <label>
-          Título del evento (se guardará como «Nombre- Título»)
+          Título del evento (se guardará en el calendario como «Quien- Título»)
           <input id="editEventTitleInput" type="text" maxlength="100" />
         </label>
 
@@ -1165,8 +1165,10 @@
         const rightPart = cleanTitle.slice(dashIndex + 1).trim();
         if (!who) who = leftPart;
         if (!eventTitle) eventTitle = rightPart;
-      } else if (!who) {
-        who = cleanTitle.replace(/^Casa Alaejos:\s*/i, '').trim() || 'Reserva';
+      } else {
+        const legacyCleaned = cleanTitle.replace(/^Casa Alaejos:\s*/i, '').trim();
+        if (!who) who = legacyCleaned || 'Reserva';
+        if (!eventTitle) eventTitle = legacyCleaned;
       }
 
       return {
