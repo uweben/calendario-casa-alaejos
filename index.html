@@ -310,6 +310,11 @@
       border-color: #0284c7;
     }
 
+    .day-cell.today {
+      border: 2px solid #0f172a;
+      background: #fffbeb;
+    }
+
     .day-cell.empty {
       background: #f1f5f9;
       cursor: default;
@@ -324,6 +329,19 @@
       font-weight: 700;
       color: var(--muted);
       line-height: 1.1;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .today-tag {
+      font-size: 0.6rem;
+      font-weight: 800;
+      background: #0f172a;
+      color: #ffffff;
+      padding: 1px 4px;
+      border-radius: 3px;
+      text-transform: uppercase;
     }
 
     .stay-pill {
@@ -337,6 +355,12 @@
       text-overflow: ellipsis;
       max-width: 100%;
       line-height: 1.25;
+      cursor: pointer;
+    }
+
+    .stay-pill:hover {
+      filter: brightness(0.92);
+      outline: 1px solid #0f172a;
     }
 
     .year-grid {
@@ -358,6 +382,15 @@
       margin: 0 0 0.4rem 0;
       font-size: 0.88rem;
       text-transform: capitalize;
+      cursor: pointer;
+      color: #0284c7;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .mini-month h3:hover {
+      text-decoration: underline;
     }
 
     .mini-days {
@@ -376,6 +409,11 @@
       min-width: 0;
     }
 
+    .mini-day.today {
+      outline: 2px solid #0f172a;
+      font-weight: 800;
+    }
+
     .mini-day:hover {
       border-color: #0f172a;
       font-weight: 700;
@@ -383,7 +421,7 @@
 
     .day-detail-box {
       margin-top: 0.8rem;
-      padding: 0.7rem 0.85rem;
+      padding: 0.75rem 0.9rem;
       border-radius: 8px;
       background: var(--info-bg);
       border: 1px solid var(--info-border);
@@ -394,6 +432,19 @@
 
     .day-detail-box.visible {
       display: block;
+    }
+
+    .day-stay-item {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0.55rem;
+      margin-top: 0.35rem;
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 6px;
     }
 
     .bookings-list {
@@ -417,6 +468,14 @@
       word-break: break-word;
     }
 
+    .booking-row.editable {
+      cursor: pointer;
+    }
+
+    .booking-row.editable:hover {
+      background: #f8fafc;
+    }
+
     .booking-row.cancelled {
       background: #f8fafc;
       opacity: 0.72;
@@ -433,6 +492,12 @@
     .booking-row.cancelled .booking-title {
       text-decoration: line-through;
       color: var(--muted);
+    }
+
+    .booking-actions {
+      display: flex;
+      gap: 0.35rem;
+      align-items: center;
     }
 
     .badge-cancelled {
@@ -499,6 +564,8 @@
       width: 100%;
       padding: 1.15rem;
       box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+      max-height: 92vh;
+      overflow-y: auto;
     }
 
     .modal-header {
@@ -534,6 +601,31 @@
       padding-left: 1.2rem;
       display: grid;
       gap: 0.45rem;
+    }
+
+    .edit-form {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .checkbox-row {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .checkbox-row input {
+      width: auto;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
     }
 
     @media (max-width: 600px) {
@@ -695,6 +787,49 @@
     </section>
   </main>
 
+  <!-- Modal de edición de evento -->
+  <div id="editModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 id="editModalTitle">Editar estancia</h2>
+        <button id="btnCloseEditModal" type="button" aria-label="Cerrar">✕</button>
+      </div>
+
+      <form id="editBookingForm" class="edit-form">
+        <label>
+          Quién va
+          <select id="editWhoSelect" required></select>
+        </label>
+
+        <label>
+          Fecha entrada
+          <input id="editCheckIn" type="date" required />
+        </label>
+
+        <label>
+          Fecha salida
+          <input id="editCheckOut" type="date" required />
+        </label>
+
+        <label>
+          Comentario (opcional, estilo tuit)
+          <input id="editCommentInput" type="text" maxlength="280" />
+        </label>
+
+        <label class="checkbox-row">
+          <input id="editCancelledCheckbox" type="checkbox" />
+          Marcar como cancelada (no se borra del calendario)
+        </label>
+
+        <div class="modal-footer">
+          <button id="btnCancelEditModal" type="button">Cerrar</button>
+          <button id="saveEditBtn" class="primary" type="submit">Guardar cambios</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal de instalación -->
   <div id="installModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="installModalTitle">
     <div class="modal-box">
       <div class="modal-header">
@@ -776,6 +911,7 @@
       viewMode: 'month',
       cursorDate: new Date(),
       bookings: [],
+      editingBookingId: null,
       loading: false,
       deferredInstallPrompt: null
     };
@@ -794,6 +930,15 @@
     const yearSelect = document.getElementById('yearSelect');
     const bookingsList = document.getElementById('bookingsList');
     const familyStats = document.getElementById('familyStats');
+
+    const editModal = document.getElementById('editModal');
+    const editWhoSelect = document.getElementById('editWhoSelect');
+    const editCheckIn = document.getElementById('editCheckIn');
+    const editCheckOut = document.getElementById('editCheckOut');
+    const editCommentInput = document.getElementById('editCommentInput');
+    const editCancelledCheckbox = document.getElementById('editCancelledCheckbox');
+    const saveEditBtn = document.getElementById('saveEditBtn');
+
     const installModal = document.getElementById('installModal');
     const nativePromptArea = document.getElementById('nativePromptArea');
     const tabAndroid = document.getElementById('tabAndroid');
@@ -801,12 +946,17 @@
     const panelAndroid = document.getElementById('panelAndroid');
     const panelIphone = document.getElementById('panelIphone');
 
-    function initSelect() {
+    function initSelects() {
       Object.keys(WHATSAPP_TO_FAMILY).forEach(name => {
-        const opt = document.createElement('option');
-        opt.value = name;
-        opt.textContent = name;
-        whoSelect.appendChild(opt);
+        const opt1 = document.createElement('option');
+        opt1.value = name;
+        opt1.textContent = name;
+        whoSelect.appendChild(opt1);
+
+        const opt2 = document.createElement('option');
+        opt2.value = name;
+        opt2.textContent = name;
+        editWhoSelect.appendChild(opt2);
       });
 
       const currentYear = new Date().getFullYear();
@@ -862,6 +1012,10 @@
 
     function addDaysDate(date, days) {
       return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
+    }
+
+    function isTodayYMD(ymd) {
+      return ymd === toYMD(new Date());
     }
 
     function normalizeText(text) {
@@ -956,12 +1110,12 @@
       }
     }
 
-    function activeBookings() {
-      return state.bookings.filter(b => !b.cancelled);
+    function activeBookings(excludeId = null) {
+      return state.bookings.filter(b => !b.cancelled && b.id !== excludeId);
     }
 
-    function hasOverlap(startA, endA) {
-      return activeBookings().filter(b => startA <= b.endDate && endA >= b.startDate);
+    function hasOverlap(startA, endA, excludeId = null) {
+      return activeBookings(excludeId).filter(b => startA <= b.endDate && endA >= b.startDate);
     }
 
     function staysOnDate(dateObj) {
@@ -1010,10 +1164,37 @@
       });
     }
 
+    function openEditModal(booking) {
+      if (!booking || !booking.id) {
+        showAlert('error', 'Este evento no tiene identificador disponible para editar desde la web.');
+        return;
+      }
+      clearAlert();
+      state.editingBookingId = booking.id;
+
+      if (WHATSAPP_TO_FAMILY[booking.who]) {
+        editWhoSelect.value = booking.who;
+      } else {
+        editWhoSelect.value = 'Víctor';
+      }
+
+      editCheckIn.value = booking.startStr;
+      editCheckOut.value = booking.endStr;
+      editCommentInput.value = booking.comment || '';
+      editCancelledCheckbox.checked = Boolean(booking.cancelled);
+      editModal.classList.add('open');
+    }
+
+    function closeEditModal() {
+      state.editingBookingId = null;
+      editModal.classList.remove('open');
+    }
+
     function handleDayClick(dateObj) {
       clearAlert();
       const clickedStr = toYMD(dateObj);
       const dayStays = staysOnDate(dateObj);
+      const todayBadge = isTodayYMD(clickedStr) ? ' <span class="today-tag">Hoy</span>' : '';
 
       if (!checkInInput.value || (checkInInput.value && checkOutInput.value)) {
         checkInInput.value = clickedStr;
@@ -1024,21 +1205,67 @@
         checkInInput.value = clickedStr;
       }
 
+      dayDetailBox.innerHTML = '';
+      const headerDiv = document.createElement('div');
+      headerDiv.innerHTML = `<strong>Día ${clickedStr}</strong>${todayBadge}`;
+      dayDetailBox.appendChild(headerDiv);
+
       if (dayStays.length > 0) {
-        const itemsHtml = dayStays
-          .map(st => {
-            const cmt = st.comment ? ` — <em>${st.comment}</em>` : '';
-            return `<div><strong style="color:${st.color}">● ${st.who}</strong> (${st.startStr} → ${st.endStr})${cmt}</div>`;
-          })
-          .join('');
-        dayDetailBox.innerHTML = `<div><strong>Día ${clickedStr}:</strong> ocupaciones previstas:</div>${itemsHtml}`;
+        dayStays.forEach(st => {
+          const item = document.createElement('div');
+          item.className = 'day-stay-item';
+          const cmt = st.comment ? ` — <em>${st.comment}</em>` : '';
+          const left = document.createElement('div');
+          left.innerHTML = `<strong style="color:${st.color}">● ${st.who}</strong> (${st.startStr} → ${st.endStr})${cmt}`;
+          item.appendChild(left);
+
+          if (st.id) {
+            const btnEdit = document.createElement('button');
+            btnEdit.type = 'button';
+            btnEdit.textContent = 'Editar';
+            btnEdit.addEventListener('click', (ev) => {
+              ev.stopPropagation();
+              openEditModal(st);
+            });
+            item.appendChild(btnEdit);
+          }
+
+          dayDetailBox.appendChild(item);
+        });
       } else {
-        dayDetailBox.innerHTML = `<div><strong>Día ${clickedStr}:</strong> libre. Seleccionado en el formulario (entrada: <strong>${checkInInput.value}</strong>, salida: <strong>${checkOutInput.value}</strong>).</div>`;
+        const freeDiv = document.createElement('div');
+        freeDiv.style.marginTop = '0.3rem';
+        freeDiv.innerHTML = `Libre. Seleccionado en el formulario (entrada: <strong>${checkInInput.value}</strong>, salida: <strong>${checkOutInput.value}</strong>).`;
+        dayDetailBox.appendChild(freeDiv);
       }
+
       dayDetailBox.classList.add('visible');
     }
 
-    function attachDayClickHandlers() {
+    function attachCalendarHandlers() {
+      calendarView.querySelectorAll('[data-month-jump]').forEach(el => {
+        el.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          const [yStr, mStr] = el.getAttribute('data-month-jump').split('-');
+          state.cursorDate = new Date(Number(yStr), Number(mStr), 1);
+          state.viewMode = 'month';
+          document.getElementById('viewMonthBtn').classList.add('active');
+          document.getElementById('viewYearBtn').classList.remove('active');
+          renderAll();
+        });
+      });
+
+      calendarView.querySelectorAll('[data-event-id]').forEach(el => {
+        el.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          const evId = el.getAttribute('data-event-id');
+          const found = state.bookings.find(b => b.id === evId);
+          if (found) {
+            openEditModal(found);
+          }
+        });
+      });
+
       calendarView.querySelectorAll('[data-date]').forEach(el => {
         el.addEventListener('click', (ev) => {
           ev.stopPropagation();
@@ -1071,18 +1298,23 @@
       for (let day = 1; day <= lastDay.getDate(); day++) {
         const current = new Date(year, month, day);
         const ymd = toYMD(current);
+        const isToday = isTodayYMD(ymd);
         const activeStays = staysOnDate(current);
-        html += `<div class="day-cell" data-date="${ymd}"><span class="day-num">${day}</span>`;
+        const todayClass = isToday ? ' today' : '';
+        const todayBadge = isToday ? '<span class="today-tag">Hoy</span>' : '';
+
+        html += `<div class="day-cell${todayClass}" data-date="${ymd}"><span class="day-num">${day}${todayBadge}</span>`;
         activeStays.forEach(st => {
           const tip = st.comment ? `${st.who} (${st.startStr} a ${st.endStr}) - ${st.comment}` : `${st.who} (${st.startStr} a ${st.endStr})`;
-          html += `<span class="stay-pill" style="background:${st.color}" title="${tip}">${st.who}</span>`;
+          const dataAttr = st.id ? ` data-event-id="${st.id.replace(/"/g, '&quot;')}"` : '';
+          html += `<span class="stay-pill" style="background:${st.color}"${dataAttr} title="${tip}">${st.who}</span>`;
         });
         html += '</div>';
       }
 
       html += '</div>';
       calendarView.innerHTML = html;
-      attachDayClickHandlers();
+      attachCalendarHandlers();
     }
 
     function renderYearView() {
@@ -1095,7 +1327,7 @@
         const lastDay = new Date(year, m + 1, 0).getDate();
         const offset = (monthDate.getDay() + 6) % 7;
 
-        html += `<div class="mini-month"><h3>${monthName} ${year}</h3><div class="mini-days">`;
+        html += `<div class="mini-month"><h3 data-month-jump="${year}-${m}" title="Abrir ${monthName} ${year} en vista mensual">${monthName} ${year}</h3><div class="mini-days">`;
         ['L', 'M', 'X', 'J', 'V', 'S', 'D'].forEach(l => {
           html += `<div style="font-weight:700;color:#64748b">${l}</div>`;
         });
@@ -1107,13 +1339,17 @@
         for (let d = 1; d <= lastDay; d++) {
           const dayObj = new Date(year, m, d);
           const ymd = toYMD(dayObj);
+          const isToday = isTodayYMD(ymd);
+          const todayClass = isToday ? ' today' : '';
           const dayStays = staysOnDate(dayObj);
+
           if (dayStays.length > 0) {
-            const bg = dayStays[dayStays.length - 1].color;
+            const topStay = dayStays[dayStays.length - 1];
             const title = dayStays.map(s => `${s.who} (${s.startStr} a ${s.endStr})`).join(' | ');
-            html += `<div class="mini-day" data-date="${ymd}" style="background:${bg};color:#fff;font-weight:700" title="${title}">${d}</div>`;
+            const evAttr = topStay.id ? ` data-event-id="${topStay.id.replace(/"/g, '&quot;')}"` : '';
+            html += `<div class="mini-day${todayClass}" data-date="${ymd}"${evAttr} style="background:${topStay.color};color:#fff;font-weight:700" title="${title}">${d}</div>`;
           } else {
-            html += `<div class="mini-day" data-date="${ymd}" title="${ymd} (libre)">${d}</div>`;
+            html += `<div class="mini-day${todayClass}" data-date="${ymd}" title="${ymd} (libre)">${d}</div>`;
           }
         }
 
@@ -1121,7 +1357,7 @@
       }
       html += '</div>';
       calendarView.innerHTML = html;
-      attachDayClickHandlers();
+      attachCalendarHandlers();
     }
 
     async function cancelBooking(booking) {
@@ -1165,8 +1401,12 @@
       bookingsList.innerHTML = '';
       state.bookings.forEach(b => {
         const row = document.createElement('div');
-        row.className = 'booking-row' + (b.cancelled ? ' cancelled' : '');
+        row.className = 'booking-row' + (b.cancelled ? ' cancelled' : '') + (b.id ? ' editable' : '');
         row.style.borderLeftColor = b.color;
+
+        if (b.id) {
+          row.addEventListener('click', () => openEditModal(b));
+        }
 
         const info = document.createElement('div');
         info.className = 'booking-info';
@@ -1179,13 +1419,32 @@
         `;
         row.appendChild(info);
 
-        if (!b.cancelled && b.id) {
-          const btnCancel = document.createElement('button');
-          btnCancel.type = 'button';
-          btnCancel.className = 'danger-outline';
-          btnCancel.textContent = 'Cancelar';
-          btnCancel.addEventListener('click', () => cancelBooking(b));
-          row.appendChild(btnCancel);
+        if (b.id) {
+          const actions = document.createElement('div');
+          actions.className = 'booking-actions';
+
+          const btnEdit = document.createElement('button');
+          btnEdit.type = 'button';
+          btnEdit.textContent = 'Editar';
+          btnEdit.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            openEditModal(b);
+          });
+          actions.appendChild(btnEdit);
+
+          if (!b.cancelled) {
+            const btnCancel = document.createElement('button');
+            btnCancel.type = 'button';
+            btnCancel.className = 'danger-outline';
+            btnCancel.textContent = 'Cancelar';
+            btnCancel.addEventListener('click', (ev) => {
+              ev.stopPropagation();
+              cancelBooking(b);
+            });
+            actions.appendChild(btnCancel);
+          }
+
+          row.appendChild(actions);
         }
 
         bookingsList.appendChild(row);
@@ -1202,6 +1461,79 @@
       renderBookingsList();
       renderFamilyStats();
     }
+
+    document.getElementById('btnCloseEditModal').addEventListener('click', closeEditModal);
+    document.getElementById('btnCancelEditModal').addEventListener('click', closeEditModal);
+    editModal.addEventListener('click', (e) => {
+      if (e.target === editModal) closeEditModal();
+    });
+
+    document.getElementById('editBookingForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!state.editingBookingId) return;
+
+      const who = editWhoSelect.value;
+      const checkInStr = editCheckIn.value;
+      const checkOutStr = editCheckOut.value;
+      const comment = editCommentInput.value.trim().slice(0, 280);
+      const cancelled = editCancelledCheckbox.checked;
+
+      if (!who || !checkInStr || !checkOutStr) {
+        alert('Completa quién va, la fecha de entrada y la fecha de salida.');
+        return;
+      }
+
+      const startDate = parseYMD(checkInStr);
+      const endDate = parseYMD(checkOutStr);
+
+      if (endDate < startDate) {
+        alert('La fecha de salida no puede ser anterior a la fecha de entrada.');
+        return;
+      }
+
+      if (!cancelled) {
+        const conflicts = hasOverlap(startDate, endDate, state.editingBookingId);
+        if (conflicts.length > 0) {
+          const names = conflicts.map(c => `${c.who} (${c.startStr} a ${c.endStr})`).join(', ');
+          alert(`Aviso de solapamiento: ya hay reserva en esas fechas (${names}).`);
+          return;
+        }
+      }
+
+      const familyKey = WHATSAPP_TO_FAMILY[who] || 'Victor';
+      const colorHex = FAMILY_COLORS[familyKey] || '#0284C7';
+      const targetId = state.editingBookingId;
+
+      saveEditBtn.disabled = true;
+      try {
+        await fetch(SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'update',
+            id: targetId,
+            who,
+            family: familyKey,
+            color: colorHex,
+            comment,
+            checkIn: checkInStr,
+            checkOut: checkOutStr,
+            cancelled
+          })
+        });
+
+        closeEditModal();
+        showAlert('ok', `Reserva de ${who} actualizada (${checkInStr} → ${checkOutStr}). Actualizando calendario...`);
+        setTimeout(() => {
+          loadBookings();
+        }, 1200);
+      } catch (err) {
+        alert('Error al guardar cambios: ' + err.message);
+      } finally {
+        saveEditBtn.disabled = false;
+      }
+    });
 
     function selectPlatformTab(platform) {
       const isIphone = platform === 'iphone';
@@ -1383,7 +1715,7 @@
       });
     }
 
-    initSelect();
+    initSelects();
     renderAll();
     loadBookings();
   </script>
