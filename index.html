@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0f172a" />
+  <title>Ocupaciones Casa Alaejos</title>
+  <link rel="manifest" href="manifest.json" />
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --primary: #0f172a;
+      --danger: #b91c1c;
+      --danger-bg: #fef2f2;
+      --ok: #15803d;
+      --ok-bg: #f0fdf4;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+    }
+
+    header {
+      background: var(--primary);
+      color: #ffffff;
+      padding: 1rem 1.25rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 1.15rem;
+      font-weight: 700;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    button {
+      font: inherit;
+      cursor: pointer;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      padding: 0.5rem 0.85rem;
+      background: #ffffff;
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    button.primary {
+      background: #0284c7;
+      border-color: #0284c7;
+      color: #ffffff;
+    }
+
+    button.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #ffffff;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1rem;
+      display: grid;
+      gap: 1rem;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem;
+    }
+
+    .card h2 {
+      margin: 0 0 0.75rem 0;
+      font-size: 1rem;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.75rem;
+      align-items: end;
+    }
+
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    select, input[type="date"] {
+      font: inherit;
+      padding: 0.55rem 0.65rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #ffffff;
+      color: var(--text);
+    }
+
+    .alert {
+      margin-top: 0.75rem;
+      padding: 0.65rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      display: none;
+    }
+
+    .alert.error {
+      display: block;
+      background: var(--danger-bg);
+      color: var(--danger);
+      border: 1px solid #fecaca;
+    }
+
+    .alert.ok {
+      display: block;
+      background: var(--ok-bg);
+      color: var(--ok);
+      border: 1px solid #bbf7d0;
+    }
+
+    .family-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 0.65rem;
+    }
+
+    .stat-box {
+      border: 1px solid var(--border);
+      border-left-width: 6px;
+      border-radius: 8px;
+      padding: 0.65rem 0.75rem;
+      background: #ffffff;
+    }
+
+    .stat-name {
+      font-weight: 700;
+      font-size: 0.92rem;
+    }
+
+    .stat-detail {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-top: 0.2rem;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .nav-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .period-label {
+      font-weight: 700;
+      min-width: 140px;
+      text-align: center;
+    }
+
+    .month-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+    }
+
+    .dow {
+      text-align: center;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--muted);
+      padding: 0.35rem 0;
+    }
+
+    .day-cell {
+      min-height: 82px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.3rem;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .day-cell.empty {
+      background: #f1f5f9;
+    }
+
+    .day-num {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .stay-pill {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: #ffffff;
+      padding: 2px 5px;
+      border-radius: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .year-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 0.85rem;
+    }
+
+    .mini-month {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.6rem;
+    }
+
+    .mini-month h3 {
+      margin: 0 0 0.4rem 0;
+      font-size: 0.9rem;
+      text-transform: capitalize;
+    }
+
+    .mini-days {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
+      text-align: center;
+      font-size: 0.72rem;
+    }
+
+    .mini-day {
+      padding: 4px 0;
+      border-radius: 4px;
+    }
+
+    .bookings-list {
+      display: grid;
+      gap: 0.45rem;
+    }
+
+    .booking-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.55rem 0.75rem;
+      border: 1px solid var(--border);
+      border-left-width: 6px;
+      border-radius: 8px;
+      font-size: 0.88rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Casa Alaejos · Ocupaciones</h1>
+    <div class="header-actions">
+      <button id="btnReload" type="button">Actualizar calendario</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <h2>Reservar fechas</h2>
+      <form id="bookingForm" class="form-grid">
+        <label>
+          Quién va
+          <select id="whoSelect" required>
+            <option value="">Selecciona tu nombre...</option>
+          </select>
+        </label>
+
+        <label>
+          Fecha entrada
+          <input id="checkIn" type="date" required />
+        </label>
+
+        <label>
+          Fecha salida
+          <input id="checkOut" type="date" required />
+        </label>
+
+        <button id="submitBtn" class="primary" type="submit">Guardar reserva</button>
+      </form>
+      <div id="formAlert" class="alert" role="alert"></div>
+    </section>
+
+    <section class="card">
+      <h2>Ocupación acumulada por familia (año seleccionado)</h2>
+      <div id="familyStats" class="family-stats"></div>
+    </section>
+
+    <section class="card">
+      <div class="toolbar">
+        <div class="nav-group">
+          <button id="viewMonthBtn" class="active" type="button">Vista mensual</button>
+          <button id="viewYearBtn" type="button">Vista anual</button>
+        </div>
+
+        <div class="nav-group">
+          <button id="prevBtn" type="button">&lt;</button>
+          <span id="periodLabel" class="period-label"></span>
+          <button id="nextBtn" type="button">&gt;</button>
+          <button id="todayBtn" type="button">Hoy</button>
+        </div>
+      </div>
+
+      <div id="calendarView"></div>
+    </section>
+
+    <section class="card">
+      <h2>Estancias registradas</h2>
+      <div id="bookingsList" class="bookings-list"></div>
+    </section>
+  </main>
+
+  <script>
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby_JVwOWvZzn5IleXlGRVnOvbPHQHEoGNYmzv9aahNxOAjpVX9XyrlfhGC0UvbhJpkM/exec';
+
+    const FAMILIES = {
+      'Victor': { color: '#0284C7', label: 'Familia Victor' },
+      'Espe': { color: '#E05A47', label: 'Familia Espe' },
+      'Felix': { color: '#059669', label: 'Familia Felix' },
+      'Jose Manuel': { color: '#D97706', label: 'Familia Jose Manuel' }
+    };
+
+    const WHATSAPP_TO_FAMILY = {
+      'Víctor': 'Victor',
+      'Intxi': 'Victor',
+      'Arturo Padre': 'Espe',
+      'Artuti España': 'Espe',
+      'Espe': 'Espe',
+      'Estefania': 'Espe',
+      'Manolo Hernández Sobrino': 'Espe',
+      'Felix': 'Felix',
+      'Maria Felix/Móvil': 'Felix',
+      'Jose Manuel': 'Jose Manuel',
+      'Juan Benito Del Castillo': 'Jose Manuel',
+      'Mario': 'Jose Manuel'
+    };
+
+    let state = {
+      viewMode: 'month',
+      cursorDate: new Date(),
+      bookings: [],
+      loading: false
+    };
+
+    const whoSelect = document.getElementById('whoSelect');
+    const checkInInput = document.getElementById('checkIn');
+    const checkOutInput = document.getElementById('checkOut');
+    const submitBtn = document.getElementById('submitBtn');
+    const formAlert = document.getElementById('formAlert');
+    const calendarView = document.getElementById('calendarView');
+    const periodLabel = document.getElementById('periodLabel');
+    const familyStats = document.getElementById('familyStats');
+    const bookingsList = document.getElementById('bookingsList');
+
+    function initSelect() {
+      Object.keys(WHATSAPP_TO_FAMILY).forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.textContent = name;
+        whoSelect.appendChild(opt);
+      });
+    }
+
+    function showAlert(type, message) {
+      formAlert.className = 'alert ' + type;
+      formAlert.textContent = message;
+    }
+
+    function clearAlert() {
+      formAlert.className = 'alert';
+      formAlert.textContent = '';
+    }
+
+    function parseYMD(str) {
+      const clean = (str || '').slice(0, 10);
+      const [y, m, d] = clean.split('-').map(Number);
+      return new Date(y, (m || 1) - 1, d || 1);
+    }
+
+    function toYMD(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function addDaysDate(date, days) {
+      return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
+    }
+
+    function resolveFamilyFromEvent(ev) {
+      const desc = ev.description || '';
+      const famMatch = desc.match(/Familia:\s*(.+)/i);
+      if (famMatch) {
+        const famKey = famMatch[1].trim();
+        if (FAMILIES[famKey]) {
+          return { key: famKey, color: FAMILIES[famKey].color };
+        }
+      }
+
+      const title = (ev.title || '').replace(/^Casa Alaejos:\s*/i, '').trim();
+      if (WHATSAPP_TO_FAMILY[title]) {
+        const famKey = WHATSAPP_TO_FAMILY[title];
+        return { key: famKey, color: FAMILIES[famKey].color };
+      }
+
+      return { key: 'Sin asignar', color: '#64748B' };
+    }
+
+    function normalizeEvents(rawEvents) {
+      return (rawEvents || []).map(ev => {
+        const startDate = parseYMD(ev.start);
+        let endDateInclusive = parseYMD(ev.end);
+
+        // En eventos all-day de Google Calendar el fin suele venir como día exclusivo (+1)
+        if (ev.isAllDay && endDateInclusive > startDate) {
+          endDateInclusive = addDaysDate(endDateInclusive, -1);
+        }
+        if (endDateInclusive < startDate) {
+          endDateInclusive = new Date(startDate.getTime());
+        }
+
+        const whoMatch = (ev.description || '').match(/Reservado por:\s*(.+)/i);
+        const who = whoMatch
+          ? whoMatch[1].trim()
+          : (ev.title || 'Reserva').replace(/^Casa Alaejos:\s*/i, '').trim();
+
+        const fam = resolveFamilyFromEvent(ev);
+
+        return {
+          id: ev.id || `${who}-${toYMD(startDate)}-${toYMD(endDateInclusive)}`,
+          who,
+          family: fam.key,
+          color: fam.color,
+          startDate,
+          endDate: endDateInclusive,
+          startStr: toYMD(startDate),
+          endStr: toYMD(endDateInclusive)
+        };
+      }).sort((a, b) => a.startDate - b.startDate);
+    }
+
+    async function loadBookings() {
+      state.loading = true;
+      document.getElementById('btnReload').disabled = true;
+      try {
+        const res = await fetch(SCRIPT_URL, { cache: 'no-store' });
+        const json = await res.json();
+        if (!json.ok) {
+          throw new Error(json.error || 'Error al leer el calendario');
+        }
+        state.bookings = normalizeEvents(json.events);
+        renderAll();
+      } catch (err) {
+        showAlert('error', 'No se pudo cargar el calendario: ' + err.message);
+      } finally {
+        state.loading = false;
+        document.getElementById('btnReload').disabled = false;
+      }
+    }
+
+    function hasOverlap(startA, endA) {
+      return state.bookings.filter(b => startA <= b.endDate && endA >= b.startDate);
+    }
+
+    function staysOnDate(dateObj) {
+      const d = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
+      return state.bookings.filter(b => d >= b.startDate && d <= b.endDate);
+    }
+
+    function countDaysInYearForFamily(year, famKey) {
+      const yearStart = new Date(year, 0, 1);
+      const yearEnd = new Date(year, 11, 31);
+      const uniqueDays = new Set();
+      let staysCount = 0;
+
+      state.bookings.forEach(b => {
+        if (b.family !== famKey) return;
+        const ovStart = b.startDate > yearStart ? b.startDate : yearStart;
+        const ovEnd = b.endDate < yearEnd ? b.endDate : yearEnd;
+        if (ovStart <= ovEnd) {
+          staysCount += 1;
+          let cur = new Date(ovStart.getTime());
+          while (cur <= ovEnd) {
+            uniqueDays.add(toYMD(cur));
+            cur = addDaysDate(cur, 1);
+          }
+        }
+      });
+
+      return { days: uniqueDays.size, stays: staysCount };
+    }
+
+    function renderStats() {
+      const year = state.cursorDate.getFullYear();
+      familyStats.innerHTML = '';
+
+      Object.entries(FAMILIES).forEach(([key, info]) => {
+        const metrics = countDaysInYearForFamily(year, key);
+        const box = document.createElement('div');
+        box.className = 'stat-box';
+        box.style.borderLeftColor = info.color;
+        box.innerHTML = `
+          <div class="stat-name">${info.label} (${year})</div>
+          <div class="stat-detail">${metrics.days} días · ${metrics.stays} estancias</div>
+        `;
+        familyStats.appendChild(box);
+      });
+    }
+
+    function renderMonthView() {
+      const year = state.cursorDate.getFullYear();
+      const month = state.cursorDate.getMonth();
+
+      periodLabel.textContent = state.cursorDate.toLocaleDateString('es-ES', {
+        month: 'long',
+        year: 'numeric'
+      });
+
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      // Lunes = 0 ... Domingo = 6
+      const startOffset = (firstDay.getDay() + 6) % 7;
+
+      const dows = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+      let html = '<div class="month-grid">';
+      dows.forEach(d => {
+        html += `<div class="dow">${d}</div>`;
+      });
+
+      for (let i = 0; i < startOffset; i++) {
+        html += '<div class="day-cell empty"></div>';
+      }
+
+      for (let day = 1; day <= lastDay.getDate(); day++) {
+        const current = new Date(year, month, day);
+        const activeStays = staysOnDate(current);
+        html += `<div class="day-cell"><span class="day-num">${day}</span>`;
+        activeStays.forEach(st => {
+          html += `<span class="stay-pill" style="background:${st.color}" title="${st.who} (${st.startStr} a ${st.endStr})">${st.who}</span>`;
+        });
+        html += '</div>';
+      }
+
+      html += '</div>';
+      calendarView.innerHTML = html;
+    }
+
+    function renderYearView() {
+      const year = state.cursorDate.getFullYear();
+      periodLabel.textContent = String(year);
+
+      let html = '<div class="year-grid">';
+      for (let m = 0; m < 12; m++) {
+        const monthDate = new Date(year, m, 1);
+        const monthName = monthDate.toLocaleDateString('es-ES', { month: 'long' });
+        const lastDay = new Date(year, m + 1, 0).getDate();
+        const offset = (monthDate.getDay() + 6) % 7;
+
+        html += `<div class="mini-month"><h3>${monthName} ${year}</h3><div class="mini-days">`;
+        ['L', 'M', 'X', 'J', 'V', 'S', 'D'].forEach(l => {
+          html += `<div style="font-weight:700;color:#64748b">${l}</div>`;
+        });
+
+        for (let i = 0; i < offset; i++) {
+          html += '<div></div>';
+        }
+
+        for (let d = 1; d <= lastDay; d++) {
+          const dayObj = new Date(year, m, d);
+          const dayStays = staysOnDate(dayObj);
+          if (dayStays.length > 0) {
+            const bg = dayStays[dayStays.length - 1].color;
+            const title = dayStays.map(s => s.who).join(', ');
+            html += `<div class="mini-day" style="background:${bg};color:#fff;font-weight:700" title="${title}">${d}</div>`;
+          } else {
+            html += `<div class="mini-day">${d}</div>`;
+          }
+        }
+
+        html += '</div></div>';
+      }
+      html += '</div>';
+      calendarView.innerHTML = html;
+    }
+
+    function renderBookingsList() {
+      if (state.bookings.length === 0) {
+        bookingsList.innerHTML = '<div style="color:#64748b;font-size:0.9rem">No hay estancias registradas en el rango consultado.</div>';
+        return;
+      }
+
+      bookingsList.innerHTML = state.bookings.map(b => `
+        <div class="booking-row" style="border-left-color:${b.color}">
+          <div>
+            <strong>${b.who}</strong> · ${b.startStr} → ${b.endStr}
+          </div>
+          <span style="font-size:0.8rem;font-weight:700;color:${b.color}">${b.family}</span>
+        </div>
+      `).join('');
+    }
+
+    function renderAll() {
+      renderStats();
+      if (state.viewMode === 'month') {
+        renderMonthView();
+      } else {
+        renderYearView();
+      }
+      renderBookingsList();
+    }
+
+    document.getElementById('bookingForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearAlert();
+
+      const who = whoSelect.value;
+      const checkInStr = checkInInput.value;
+      const checkOutStr = checkOutInput.value;
+
+      if (!who || !checkInStr || !checkOutStr) {
+        showAlert('error', 'Completa quién va, la fecha de entrada y la fecha de salida.');
+        return;
+      }
+
+      const startDate = parseYMD(checkInStr);
+      const endDate = parseYMD(checkOutStr);
+
+      if (endDate < startDate) {
+        showAlert('error', 'La fecha de salida no puede ser anterior a la fecha de entrada.');
+        return;
+      }
+
+      const conflicts = hasOverlap(startDate, endDate);
+      if (conflicts.length > 0) {
+        const names = conflicts.map(c => `${c.who} (${c.startStr} a ${c.endStr})`).join(', ');
+        showAlert('error', `Aviso de solapamiento: ya hay reserva en esas fechas (${names}).`);
+        return;
+      }
+
+      const familyKey = WHATSAPP_TO_FAMILY[who] || 'Victor';
+      const colorHex = (FAMILIES[familyKey] && FAMILIES[familyKey].color) || '#0284C7';
+
+      submitBtn.disabled = true;
+      try {
+        await fetch(SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            who,
+            family: familyKey,
+            color: colorHex,
+            checkIn: checkInStr,
+            checkOut: checkOutStr
+          })
+        });
+
+        showAlert('ok', `Reserva enviada para ${who} (${checkInStr} a ${checkOutStr}). Actualizando calendario...`);
+        checkInInput.value = '';
+        checkOutInput.value = '';
+
+        setTimeout(() => {
+          loadBookings();
+        }, 1200);
+      } catch (err) {
+        showAlert('error', 'Error al guardar la reserva: ' + err.message);
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+
+    document.getElementById('viewMonthBtn').addEventListener('click', () => {
+      state.viewMode = 'month';
+      document.getElementById('viewMonthBtn').classList.add('active');
+      document.getElementById('viewYearBtn').classList.remove('active');
+      renderAll();
+    });
+
+    document.getElementById('viewYearBtn').addEventListener('click', () => {
+      state.viewMode = 'year';
+      document.getElementById('viewYearBtn').classList.add('active');
+      document.getElementById('viewMonthBtn').classList.remove('active');
+      renderAll();
+    });
+
+    document.getElementById('prevBtn').addEventListener('click', () => {
+      if (state.viewMode === 'month') {
+        state.cursorDate = new Date(state.cursorDate.getFullYear(), state.cursorDate.getMonth() - 1, 1);
+      } else {
+        state.cursorDate = new Date(state.cursorDate.getFullYear() - 1, 0, 1);
+      }
+      renderAll();
+    });
+
+    document.getElementById('nextBtn').addEventListener('click', () => {
+      if (state.viewMode === 'month') {
+        state.cursorDate = new Date(state.cursorDate.getFullYear(), state.cursorDate.getMonth() + 1, 1);
+      } else {
+        state.cursorDate = new Date(state.cursorDate.getFullYear() + 1, 0, 1);
+      }
+      renderAll();
+    });
+
+    document.getElementById('todayBtn').addEventListener('click', () => {
+      state.cursorDate = new Date();
+      renderAll();
+    });
+
+    document.getElementById('btnReload').addEventListener('click', () => {
+      clearAlert();
+      loadBookings();
+    });
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      });
+    }
+
+    initSelect();
+    renderAll();
+    loadBookings();
+  </script>
+</body>
+</html>
